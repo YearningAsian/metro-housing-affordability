@@ -1,0 +1,8 @@
+[sqlfluff]
+dialect = duckdb
+# shortcut: jinja templater can't resolve ref()/source() without a dbt project; switch to templater = dbt in Phase 6
+templater = jinja
+max_line_length = 120
+
+[sqlfluff:indentation]
+tab_space_size = 4

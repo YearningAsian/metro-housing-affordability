@@ -1,0 +1,13 @@
+# Study metros. CBSA codes from docs/PROJECT_PLAN.md; verify against the Census delineation file in Phase 3.
+metros:
+  - {cbsa_code: "34980", name: "Nashville, TN", role: core}
+  - {cbsa_code: "12060", name: "Atlanta, GA", role: core}
+  - {cbsa_code: "36740", name: "Orlando, FL", role: core}
+  - {cbsa_code: "42660", name: "Seattle, WA", role: core}  # high-cost contrast
+  - {cbsa_code: "12420", name: "Austin, TX", role: comparison}
+  - {cbsa_code: "38060", name: "Phoenix, AZ", role: comparison}
+  - {cbsa_code: "39580", name: "Raleigh, NC", role: comparison}
+  - {cbsa_code: "16740", name: "Charlotte, NC-SC", role: comparison}
+  - {cbsa_code: "45300", name: "Tampa, FL", role: comparison}
+  - {cbsa_code: "19100", name: "Dallas-Fort Worth, TX", role: comparison}
+  - {cbsa_code: "19740", name: "Denver, CO", role: comparison}

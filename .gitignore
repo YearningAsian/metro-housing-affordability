@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Raw and derived data never goes in git
+data/
+*.duckdb
+*.duckdb.wal
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+logs/
