@@ -124,7 +124,7 @@ Part A leaves you with a working repo, API keys, a profile of every source and t
 
 - [x] Create a GitHub repo with folders `ingest/`, `dbt/`, `notebooks/`, `ml/`, `dashboard/` and `docs/`
 - [x] Set up Python 3.12 with `uv` or `venv`; install `duckdb`, `polars` or `pandas`, `requests`, `dbt-duckdb`, `pytest` and `ruff`
-- [ ] Request Census, FRED and HUD API keys; keep them in `.env` (git-ignored) and as GitHub Actions secrets
+- [x] Request Census, FRED and HUD API keys; keep them in `.env` (git-ignored) and as GitHub Actions secrets
 - [x] Write `config/metros.yml` with the 11 CBSA codes
 - [x] Write a README stub: the question, the metros, the sources
 - [x] Add pre-commit hooks for `ruff` and `sqlfluff`
