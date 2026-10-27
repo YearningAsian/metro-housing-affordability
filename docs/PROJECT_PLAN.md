@@ -135,11 +135,11 @@ Part A leaves you with a working repo, API keys, a profile of every source and t
 
 Know every file's columns, grain, gaps and quirks before writing any pipeline.
 
-- [ ] Download one sample of each source by hand
-- [ ] Profile each in a notebook: row counts, date range, nulls, duplicate keys, which geography codes it uses
-- [ ] Record per source: primary key, date column, geography type (ZIP, ZCTA, county FIPS or CBSA), units, seasonal adjustment
-- [ ] Note each release lag; ACS income, for example, arrives about a year after the period it measures
-- [ ] Write `docs/data_dictionary.md`
+- [x] Download one sample of each source by hand
+- [x] Profile each in a notebook: row counts, date range, nulls, duplicate keys, which geography codes it uses
+- [x] Record per source: primary key, date column, geography type (ZIP, ZCTA, county FIPS or CBSA), units, seasonal adjustment
+- [x] Note each release lag; ACS income, for example, arrives about a year after the period it measures
+- [x] Write `docs/data_dictionary.md`
 
 **Deliverable:** data dictionary and profiling notebook. **Done when:** every column you plan to use has a type, unit and definition.
 

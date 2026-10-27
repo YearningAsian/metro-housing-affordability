@@ -50,6 +50,8 @@ All free and public; no scraping.
 | [Census CBSA delineations](https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html) | County to metro |
 | [Census cartographic boundaries](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | Map shapes |
 
+Keys, units, release lags and quirks for each source are in the [data dictionary](docs/data_dictionary.md), backed by the [profiling notebook](notebooks/02_source_profiling.ipynb).
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).
