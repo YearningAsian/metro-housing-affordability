@@ -1,15 +1,86 @@
 # Study metros. CBSA codes follow the July 2023 Census delineation (checked by the dim_metro tests in Phase 3).
 # zillow_region_id: Zillow's metro RegionID (its metro files carry no CBSA code).
 # redfin_table_ids: Redfin metro keys; Dallas-Fort Worth and Seattle come split into metro divisions.
+# fred_unemployment_series: FRED's monthly, not seasonally adjusted MSA unemployment rate (BLS LAUS).
+# hud_fmr_areas: HUD FMR areas in the metro (fmr/listMetroAreas codes starting METRO + cbsa_code),
+#   including the single-county areas HUD splits off.
 metros:
-  - {cbsa_code: "34980", name: "Nashville, TN", role: core, zillow_region_id: 394902, redfin_table_ids: [34980]}
-  - {cbsa_code: "12060", name: "Atlanta, GA", role: core, zillow_region_id: 394347, redfin_table_ids: [12060]}
-  - {cbsa_code: "36740", name: "Orlando, FL", role: core, zillow_region_id: 394943, redfin_table_ids: [36740]}
-  - {cbsa_code: "42660", name: "Seattle, WA", role: core, zillow_region_id: 395078, redfin_table_ids: [42644, 45104]}  # high-cost contrast
-  - {cbsa_code: "12420", name: "Austin, TX", role: comparison, zillow_region_id: 394355, redfin_table_ids: [12420]}
-  - {cbsa_code: "38060", name: "Phoenix, AZ", role: comparison, zillow_region_id: 394976, redfin_table_ids: [38060]}
-  - {cbsa_code: "39580", name: "Raleigh, NC", role: comparison, zillow_region_id: 395012, redfin_table_ids: [39580]}
-  - {cbsa_code: "16740", name: "Charlotte, NC-SC", role: comparison, zillow_region_id: 394458, redfin_table_ids: [16740]}
-  - {cbsa_code: "45300", name: "Tampa, FL", role: comparison, zillow_region_id: 395148, redfin_table_ids: [45300]}
-  - {cbsa_code: "19100", name: "Dallas-Fort Worth, TX", role: comparison, zillow_region_id: 394514, redfin_table_ids: [19124, 23104]}
-  - {cbsa_code: "19740", name: "Denver, CO", role: comparison, zillow_region_id: 394530, redfin_table_ids: [19740]}
+  - cbsa_code: "34980"
+    name: "Nashville, TN"
+    role: core
+    zillow_region_id: 394902
+    redfin_table_ids: [34980]
+    fred_unemployment_series: NASH947URN
+    hud_fmr_areas: [METRO34980M34980, METRO34980N47111, METRO34980N47119, METRO34980N47159]
+  - cbsa_code: "12060"
+    name: "Atlanta, GA"
+    role: core
+    zillow_region_id: 394347
+    redfin_table_ids: [12060]
+    fred_unemployment_series: ATLA013URN
+    hud_fmr_areas: [METRO12060M12060, METRO12060N13035, METRO12060N13143, METRO12060N13171, METRO12060N13199,
+                    METRO12060N13211]
+  - cbsa_code: "36740"
+    name: "Orlando, FL"
+    role: core
+    zillow_region_id: 394943
+    redfin_table_ids: [36740]
+    fred_unemployment_series: ORLA712URN
+    hud_fmr_areas: [METRO36740M36740]
+  - cbsa_code: "42660"
+    name: "Seattle, WA"
+    role: core  # high-cost contrast
+    zillow_region_id: 395078
+    redfin_table_ids: [42644, 45104]
+    fred_unemployment_series: SEAT653URN
+    hud_fmr_areas: [METRO42660MM7600, METRO42660MM8200]
+  - cbsa_code: "12420"
+    name: "Austin, TX"
+    role: comparison
+    zillow_region_id: 394355
+    redfin_table_ids: [12420]
+    fred_unemployment_series: AUST448URN
+    hud_fmr_areas: [METRO12420M12420]
+  - cbsa_code: "38060"
+    name: "Phoenix, AZ"
+    role: comparison
+    zillow_region_id: 394976
+    redfin_table_ids: [38060]
+    fred_unemployment_series: PHOE004URN
+    hud_fmr_areas: [METRO38060M38060]
+  - cbsa_code: "39580"
+    name: "Raleigh, NC"
+    role: comparison
+    zillow_region_id: 395012
+    redfin_table_ids: [39580]
+    fred_unemployment_series: RALE537URN
+    hud_fmr_areas: [METRO39580M39580]
+  - cbsa_code: "16740"
+    name: "Charlotte, NC-SC"
+    role: comparison
+    zillow_region_id: 394458
+    redfin_table_ids: [16740]
+    fred_unemployment_series: CHAR737URN
+    hud_fmr_areas: [METRO16740M16740, METRO16740M37007, METRO16740N37097, METRO16740N37109, METRO16740N37159,
+                    METRO16740N45023, METRO16740N45057]
+  - cbsa_code: "45300"
+    name: "Tampa, FL"
+    role: comparison
+    zillow_region_id: 395148
+    redfin_table_ids: [45300]
+    fred_unemployment_series: TAMP312URN
+    hud_fmr_areas: [METRO45300M45300]
+  - cbsa_code: "19100"
+    name: "Dallas-Fort Worth, TX"
+    role: comparison
+    zillow_region_id: 394514
+    redfin_table_ids: [19124, 23104]
+    fred_unemployment_series: DALL148URN
+    hud_fmr_areas: [METRO19100M19100, METRO19100MM2800, METRO19100N48497]
+  - cbsa_code: "19740"
+    name: "Denver, CO"
+    role: comparison
+    zillow_region_id: 394530
+    redfin_table_ids: [19740]
+    fred_unemployment_series: DENV708URN
+    hud_fmr_areas: [METRO19740M19740]

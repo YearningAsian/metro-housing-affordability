@@ -166,16 +166,16 @@ Part B makes every source land automatically and gives the warehouse a written d
 
 One Python extractor per source downloads the data, records what it fetched and lands the files unchanged.
 
-- [ ] Write a shared `BaseExtractor` with retries, backoff, timeouts and logging
-- [ ] Write one extractor per source: `zillow.py`, `redfin.py`, `bps.py`, `acs.py`, `qcew.py`, `fred.py`, `irs_migration.py`, `hud_fmr.py`, `hud_crosswalk.py`
-- [ ] Land files as-is under `data/raw/<source>/<load_date>/`
-- [ ] Log URL, file hash, row count and load time to a `_load_log` table
-- [ ] Skip a download when the hash matches the last load, so reruns are safe
-- [ ] Convert each file to Parquet in `data/bronze/`, all columns as text plus load metadata
-- [ ] Unit-test each extractor against a small fixture file
-- [ ] Keep data out of git; add a `make ingest` command
+- [x] Write a shared `BaseExtractor` with retries, backoff, timeouts and logging
+- [x] Write one extractor per source: `zillow.py`, `redfin.py`, `bps.py`, `acs.py`, `qcew.py`, `fred.py`, `irs_migration.py`, `hud_fmr.py`, `hud_crosswalk.py`
+- [x] Land files as-is under `data/raw/<source>/<load_date>/`
+- [x] Log URL, file hash, row count and load time to a `_load_log` table
+- [x] Skip a download when the hash matches the last load, so reruns are safe
+- [x] Convert each file to Parquet in `data/bronze/`, all columns as text plus load metadata
+- [x] Unit-test each extractor against a small fixture file
+- [x] Keep data out of git; add a `.\tasks.ps1 ingest` command
 
-**Deliverable:** `make ingest` fills bronze for every source. **Done when:** a second run in the same month downloads nothing and finishes in under a minute.
+**Deliverable:** `.\tasks.ps1 ingest` fills bronze for every source. **Done when:** a second run in the same month downloads nothing and finishes in under a minute.
 
 ### Phase 5: Warehouse layers (week 6)
 

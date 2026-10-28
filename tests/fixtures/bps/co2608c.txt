@@ -1,0 +1,5 @@
+Survey,FIPS,FIPS,Region,Division,County,,1-unit,,,2-units,,,3-4 units,,,5+ units,,,1-unit rep,,,2-units rep,,,3-4 units rep,,, 5+units rep
+Date,State,County,Code,Code,Name,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value
+ 
+202608,01,001,3,6,Autauga County                                              ,22,22,10009211,0,0,0,0,0,0,0,0,0,22,22,10009211,0,0,0,0,0,0,0,0,0
+202608,01,003,3,6,Baldwin County                                              ,204,204,67014333,1,2,280000,0,0,0,2,10,1838633,130,130,43177065,1,2,280000,0,0,0,0,0,0

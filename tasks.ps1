@@ -1,5 +1,5 @@
-# Task runner (no make on Windows). Usage: .\tasks.ps1 setup
-param([Parameter(Position = 0)][string]$Task = "help")
+# Task runner (no make on Windows). Usage: .\tasks.ps1 setup   or   .\tasks.ps1 ingest [source ...]
+param([Parameter(Position = 0)][string]$Task = "help", [Parameter(ValueFromRemainingArguments)][string[]]$Rest)
 $ErrorActionPreference = "Stop"
 
 function Invoke-Native { & $args[0] $args[1..($args.Count - 1)]; if ($LASTEXITCODE) { throw "$($args -join ' ') failed" } }
@@ -15,5 +15,8 @@ switch ($Task) {
     "lint" { Invoke-Native uv run pre-commit run --all-files }
     # dbt resolves data/ and config/ paths from the repo root
     "build" { Invoke-Native uv run dbt build --project-dir dbt --profiles-dir dbt }
-    default { Write-Host "Tasks: setup, lint, build" }
+    # download new source files into data/raw and data/bronze; skips what this month already has
+    "ingest" { Invoke-Native uv run python -m ingest @Rest }
+    "test" { Invoke-Native uv run pytest }
+    default { Write-Host "Tasks: setup, lint, test, ingest [source ...], build" }
 }

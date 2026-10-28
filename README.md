@@ -39,7 +39,7 @@ All free and public; no scraping.
 | Source | Used for |
 | --- | --- |
 | [Zillow Research](https://www.zillow.com/research/data/) (ZHVI, ZORI) | Prices, rents |
-| [Redfin Data Center](https://www.redfin.com/news/data-center/) | Inventory, days on market, price drops |
+| [Redfin Data Center](https://www.redfin.com/news/data-center/) | Sale prices, inventory, days on market |
 | [Census Building Permits Survey](https://www.census.gov/construction/bps/index.html) | Housing supply |
 | [Census ACS 5-year](https://www.census.gov/data/developers/data-sets/acs-5year.html) | Income, population, rent burden |
 | [BLS QCEW](https://www.bls.gov/cew/) | Jobs and wages |
@@ -60,4 +60,12 @@ Needs [uv](https://docs.astral.sh/uv/).
 .\tasks.ps1 setup   # Python 3.12 env, pre-commit hooks, .env from .env.example
 ```
 
-Then put your Census, FRED and HUD keys in `.env`.
+Then put your Census, FRED and HUD keys in `.env`, and run:
+
+```powershell
+.\tasks.ps1 ingest   # download every source to data/raw and data/bronze (first run: about 3 GB, 15 minutes)
+.\tasks.ps1 test     # unit tests
+.\tasks.ps1 build    # dbt models and tests
+```
+
+`.\tasks.ps1 ingest fred zillow` loads only the named sources. A second run in the same month downloads nothing.

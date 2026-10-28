@@ -11,16 +11,16 @@ Snapshot date: **2026-10-27**. Lags and latest periods are as observed on that d
 - **Months** are stored as the first day of the month (`DATE`) in the warehouse. Zillow uses month-end dates and BPS uses `YYYYMM`; both get converted in staging.
 - **Nulls.** Each source has its own missing-value marker (`NA`, `.`, `-1`, `-666666666`). Staging turns every one of them into `NULL`. They are listed per source below.
 - **Money** is nominal US dollars unless a row says otherwise. Inflation adjustment uses CPI-U from FRED.
-- **Dropped columns.** Source-computed changes (Redfin `*_MOM`, `*_YOY`; QCEW `oty_*`; QCEW location quotients `lq_*`) are not used. The warehouse computes its own growth rates so every metric uses one method.
+- **Dropped columns.** Source-computed changes (Redfin `* MOM`, `* YOY`; QCEW `oty_*`; QCEW location quotients `lq_*`) are not used. The warehouse computes its own growth rates so every metric uses one method.
 
 ## Summary
 
 | Source | Grain (primary key) | Date column | Geography | Units | Seasonal adjustment | Latest period on 2026-10-27 | Typical release lag |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Zillow ZHVI | (`RegionID`, month) | month-end column headers | ZIP, Zillow metro | USD | SA, smoothed | 2026-09 | About 2–3 weeks after month end (mid-month) |
-| Zillow ZORI | (`RegionID`, month) | month-end column headers | ZIP, Zillow metro | USD per month | NSA, smoothed (SA files exist) | 2026-09 | About 2–3 weeks after month end |
-| Redfin metro | (`TABLE_ID`, `PERIOD_BEGIN`, `PROPERTY_TYPE_ID`, `IS_SEASONALLY_ADJUSTED`) | `PERIOD_BEGIN` | CBSA or metro division | mixed, see below | both SA and NSA rows | 2026-05 | Normally about 3 weeks; **feed stale** since 2026-06-02 |
-| Redfin ZIP | same as metro | `PERIOD_BEGIN` (90-day window) | ZIP | mixed | NSA only | window starting 2026-03 | Normally about 3 weeks; **feed stale** |
+| Zillow ZORI | (`RegionID`, month) | month-end column headers | ZIP, Zillow metro | USD per month | SA, smoothed (ingested file is SA) | 2026-09 | About 2–3 weeks after month end |
+| Redfin metro | (`REGION ID`, `PERIOD BEGIN`) | `PERIOD BEGIN` | CBSA or metro division | mixed, see below | NSA only | 2026-09 | About 1 week after month end (updated 2026-10-07) |
+| Redfin ZIP | (`REGION ID`, `PERIOD BEGIN`) | `PERIOD END` (rolling three months) | ZIP | mixed | NSA only | window ending 2026-09 | Same as metro |
 | Census BPS | (`survey_date`, `cbsa_code`) or (`survey_date`, `state_fips`, `county_fips`) | `survey_date` (`YYYYMM`) | CBSA, county | units, buildings, value | NSA | 2026-08 | About 6–8 weeks after month end |
 | ACS 5-year | (`geo_id`) per vintage | vintage (end year) | ZCTA, county, CBSA | USD, persons, percent | n/a (5-year pooled) | 2020–2024 | About 11–12 months after the last year (December release) |
 | BLS QCEW | (`area_fips`, `own_code`, `industry_code`, `agglvl_code`, `size_code`, `year`, `qtr`) | `year`, `qtr` | county, MSA, state | jobs, USD | NSA | 2026 Q1 | About 5–7 months after quarter end |
@@ -35,9 +35,9 @@ Snapshot date: **2026-10-27**. Lags and latest periods are as observed on that d
 
 ## Study metros across sources
 
-Each source names the 11 metros differently. The Zillow and Redfin keys live in `config/metros.yml`, and `dim_metro` carries all of them (see [Geography backbone](#geography-backbone)).
+Each source names the 11 metros differently. The Zillow, Redfin, FRED and HUD FMR keys live in `config/metros.yml`, and `dim_metro` carries them (see [Geography backbone](#geography-backbone)).
 
-| Metro | CBSA (2023) | Zillow metro `RegionID` | Redfin `TABLE_ID` | QCEW `area_fips` | Metro divisions (2023) |
+| Metro | CBSA (2023) | Zillow metro `RegionID` | Redfin `REGION ID` | QCEW `area_fips` | Metro divisions (2023) |
 | --- | --- | --- | --- | --- | --- |
 | Atlanta | 12060 | 394347 | 12060 | C1206 | 12054, 31924 |
 | Austin | 12420 | 394355 | 12420 | C1242 | none |
@@ -56,7 +56,8 @@ Notes:
 - Zillow's metro file has no CBSA code. Match on `RegionID` (above), never on name: `Austin, TX` and `Austin, MN` both exist.
 - Redfin splits Dallas-Fort Worth and Seattle into metro divisions, and Seattle uses pre-2023 divisions (no Everett, 21794). Redfin medians cannot be added up, so for these two metros use the largest division (19124 Dallas, 42644 Seattle) or build the metro from Redfin ZIP rows. Phase 5 decides.
 - The ZIP-level Zillow `Metro` column holds pre-2023 CBSA titles (e.g. `Denver-Aurora-Lakewood, CO`) and is null for 12.4% of ZHVI ZIPs. Assign ZIPs to metros with the HUD crosswalk instead.
-- FRED metro unemployment series follow `LAUMT` + state FIPS + CBSA + `000000` + `03` (rate). Only Nashville, `LAUMT473498000000003`, was pulled; the other ten IDs are confirmed in Phase 4.
+- FRED metro unemployment uses the monthly NSA series whose IDs end in `URN` (e.g. `NASH947URN`, `DALL148URN`), found with `fred/series/search`. The `LAUMT…03` pattern only exists for Nashville. IDs are in `config/metros.yml`; all 11 start in 1990 (Seattle 1994).
+- HUD FMR areas: each metro has a main area (`METRO{cbsa}M{cbsa}`) and possibly sub-areas (`…MM7600`) or single-county areas HUD splits off (`…N13035`). All 28 study-metro area codes are in `config/metros.yml`. Dallas-Fort Worth is split into Dallas and Fort Worth areas; Seattle into Seattle-Bellevue and Tacoma.
 
 ---
 
@@ -65,7 +66,7 @@ Notes:
 Files from `https://files.zillowstatic.com/research/public_csvs/`:
 
 - ZHVI: `{Zip,Metro}_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv`
-- ZORI: `{Zip,Metro}_zori_uc_sfrcondomfr_sm_month.csv`
+- ZORI: `{Zip,Metro}_zori_uc_sfrcondomfr_sm_sa_month.csv` (seasonally adjusted; Phase 4 switched from the NSA file the profile used)
 
 **Shape.** Wide: one row per region, one column per month (`2000-01-31`, …). Staging unpivots to (`RegionID`, month, value). Rows after unpivot: ZIP ZHVI 6,508,601; ZIP ZORI 469,420; metro ZHVI 238,029; metro ZORI 53,977. No duplicate keys.
 
@@ -75,7 +76,7 @@ Files from `https://files.zillowstatic.com/research/public_csvs/`:
 
 - `RegionName` is the ZIP for ZIP files. Read it as text: some ZIPs start with `0`.
 - Metro files contain one `country` row (`RegionType = 'country'`, United States). Filter `RegionType = 'msa'`.
-- ZORI is not seasonally adjusted in the current sample, while ZHVI is. Seasonally adjusted ZORI files (`…_zori_uc_sfrcondomfr_sm_sa_month.csv`) exist. **Decision for Phase 4:** download the SA ZORI file so prices and rents are both SA.
+- The profiled ZORI sample was not seasonally adjusted. Ingestion loads the SA ZORI files instead, so prices and rents are both SA.
 
 | Column | Type | Unit | Definition |
 | --- | --- | --- | --- |
@@ -86,49 +87,49 @@ Files from `https://files.zillowstatic.com/research/public_csvs/`:
 | `CountyName` | VARCHAR | name | County of the ZIP (ZIP files only). Informational; not used for joins. |
 | `month` | DATE | month | Unpivoted column header; month-end in the file, converted to month start. |
 | `zhvi` | DOUBLE | USD | Typical home value: mid tier (33rd–67th percentile), single-family and condo, smoothed, seasonally adjusted. |
-| `zori` | DOUBLE | USD per month | Typical observed market asking rent: single-family, condo and multifamily, smoothed. |
+| `zori` | DOUBLE | USD per month | Typical observed market asking rent: single-family, condo and multifamily, smoothed, seasonally adjusted. |
 
-## Redfin market tracker
+## Redfin housing market data
 
-Files from `https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/`: `redfin_metro_market_tracker.tsv000.gz` (metro, 579,544 rows) and `zip_code_market_tracker.tsv000.gz` (ZIP, 9,725,026 rows, 1.5 GB). Tab-separated, gzip. `NA` means null.
+Files from `https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_data_center/housing_market/monthly/`: `all_metros.csv` (metro, 166,872 rows, 46 MB) and `all_zips.csv` (ZIP, 4,990,738 rows, 1.3 GB). Comma-separated with quoted, upper-case headers that contain spaces and units (`"MEDIAN SALE PRICE NSA ($)"`). `NA` means null; bronze keeps it as the text `NA`.
 
-**Grain.** Metro rows are calendar months (`PERIOD_DURATION = 30`), in both SA and NSA versions. ZIP rows are rolling 90-day windows (`PERIOD_DURATION = 90`), NSA only; `PERIOD_BEGIN` is the window start and `PERIOD_END` the last day of the third month. For a monthly ZIP series, key each window on its `PERIOD_END` month.
+**Feed move.** The old `redfin_market_tracker/*.tsv000.gz` files stopped on 2026-06-02 and now return 403. Redfin republished the data under `redfin_data_center/` (`LAST UPDATED` 2026-10-07, data through 2026-09). `housing_market/` is all residential. `property_types/monthly/` has the same layout plus a `PROPERTY TYPE` column, but no all-residential rows, so it is not ingested. `housing_market/weekly/all_metros.csv` also exists (Phase 5 may use it); `weekly/all_zips.csv` returns 403.
 
-**Staleness (risk).** Both files show `LAST_UPDATED` 2026-06-02. Metro data ends 2026-05 and ZIP data ends with the window 2026-03 to 2026-05. Redfin normally updates monthly. Phase 4 must check whether the feed moved or stopped before relying on it.
+**Grain.** Metro rows are calendar months (`FREQUENCY` = `Monthly`), unique on (`REGION ID`, `PERIOD BEGIN`), 2012-01 to 2026-09. ZIP rows are rolling three-month windows (`FREQUENCY` = `Rolling 3 Months`), unique on (`REGION ID`, `PERIOD BEGIN`); `PERIOD BEGIN` is the window start and `PERIOD END` the last day of the third month (latest window 2026-07 to 2026-09). For a monthly ZIP series, key each window on its `PERIOD END` month. All values are NSA; the file has no seasonally adjusted rows and no property-type split.
 
 **Quirks.**
 
-- `TABLE_ID` is the CBSA or metro-division code for metro rows, but a Redfin-internal ID for ZIP rows. Take the ZIP from `REGION` (`Zip Code: 37203`).
-- ZIP rows have no `MONTHS_OF_SUPPLY` and no `PRICE_DROPS` (100% null). The Phase 11 "share of price drops" feature is only available at metro grain.
-- Seasonally adjusted counts can be negative (5 negative `INVENTORY` values among 33,295 SA metro rows). Use NSA counts for levels and SA rows only for trend charts.
-- Outliers: ZIP `MEDIAN_SALE_PRICE` and `MEDIAN_PPSF` reach 999,999,999, and `MEDIAN_LIST_PRICE` reaches 2,000,000,001. Phase 7 adds range tests; small ZIPs with few sales are noisy.
-- `PARENT_METRO_REGION_METRO_CODE` gives each ZIP's metro (CBSA or division) as Redfin assigns it.
+- `REGION ID` is the CBSA or metro-division code for metro rows (matches `dim_metro.redfin_table_ids`), but a Redfin-internal ID for ZIP rows. For ZIP rows, `REGION NAME` is the 5-digit ZIP as text (keep leading zeros).
+- ZIP rows carry `METRO`, the metro name as Redfin assigns it (`Nashville, TN metro area`), not a code. Map ZIPs to CBSAs through the HUD crosswalk instead.
+- No price-drop column exists in this feed. The Phase 11 "share of price drops" feature has no Redfin source.
+- ZIP rows are sparse: 18% of `MONTHS OF SUPPLY` and 14% of `MEDIAN SALE PRICE NSA ($)` values are `NA`.
+- Outliers: 217 ZIP rows have a median sale price above 10 million USD (max 65,900,010). Phase 7 adds range tests; small ZIPs with few sales are noisy. Metro medians top out at 4,875,000.
+- `MOM` and `YOY` columns are Redfin's own changes; percent changes are in `(%)`, ratio and share changes in `(PPTS)`, days-on-market changes in `(DAYS)`. They are not used (see Conventions).
 
 | Column | Type | Unit | Definition |
 | --- | --- | --- | --- |
-| `PERIOD_BEGIN` | DATE | day | First day of the period. |
-| `PERIOD_END` | DATE | day | Last day of the period. |
-| `PERIOD_DURATION` | INTEGER | days | 30 (metro, monthly) or 90 (ZIP, rolling three months). |
-| `REGION_TYPE` | VARCHAR | category | `metro` or `zip code`. |
-| `TABLE_ID` | BIGINT | id | Metro: CBSA or metro-division code. ZIP: Redfin internal, do not use. |
-| `REGION` | VARCHAR | text | Metro name, or `Zip Code: NNNNN` (parse the ZIP). |
-| `IS_SEASONALLY_ADJUSTED` | BOOLEAN | flag | True for SA rows (metro only). |
-| `PROPERTY_TYPE_ID` | INTEGER | category | -1 All Residential, 3 Condo/Co-op, 4 Multi-Family (2–4 Unit), 6 Single Family Residential, 13 Townhouse. Use -1 unless a model needs a split. |
-| `MEDIAN_SALE_PRICE` | DOUBLE | USD | Median closing price of homes sold in the period. |
-| `MEDIAN_LIST_PRICE` | DOUBLE | USD | Median asking price of listings added in the period. |
-| `MEDIAN_PPSF` | DOUBLE | USD per sq ft | Median sale price per square foot. |
-| `HOMES_SOLD` | DOUBLE | homes | Closed sales in the period. |
-| `PENDING_SALES` | DOUBLE | homes | Listings that went under contract in the period. |
-| `NEW_LISTINGS` | DOUBLE | homes | Listings added in the period. |
+| `PERIOD BEGIN` | DATE | day | First day of the period. |
+| `PERIOD END` | DATE | day | Last day of the period. |
+| `FREQUENCY` | VARCHAR | category | `Monthly` (metro) or `Rolling 3 Months` (ZIP). |
+| `REGION TYPE` | VARCHAR | category | `Metro` or `Zip`. |
+| `REGION ID` | BIGINT | id | Metro: CBSA or metro-division code. ZIP: Redfin internal, do not use. |
+| `REGION NAME` | VARCHAR | text | Metro name, or the ZIP code. |
+| `METRO` | VARCHAR | text | ZIP file only: Redfin's metro name for the ZIP. |
+| `MEDIAN SALE PRICE NSA ($)` | DOUBLE | USD | Median closing price of homes sold in the period. |
+| `MEDIAN NEW LISTING PRICE ($)` | DOUBLE | USD | Median asking price of listings added in the period. |
+| `MEDIAN SALE PRICE PER SQ.FT. ($)` | DOUBLE | USD per sq ft | Median sale price per square foot. |
+| `MEDIAN NEW LISTING PRICE PER SQ.FT. ($)` | DOUBLE | USD per sq ft | Median asking price per square foot of new listings. |
+| `HOMES SOLD` | DOUBLE | homes | Closed sales in the period. |
+| `PENDING SALES` | DOUBLE | homes | Listings that went under contract in the period. |
+| `NEW LISTINGS` | DOUBLE | homes | Listings added in the period. |
+| `ACTIVE LISTINGS` | DOUBLE | homes | Listings active at any time in the period. |
 | `INVENTORY` | DOUBLE | homes | Active listings at the end of the period. |
-| `MONTHS_OF_SUPPLY` | DOUBLE | months | Inventory divided by monthly sales. Metro only. |
-| `MEDIAN_DOM` | DOUBLE | days | Median days on market in the period. |
-| `AVG_SALE_TO_LIST` | DOUBLE | ratio | Mean of sale price divided by final list price (1.0 = at asking). |
-| `SOLD_ABOVE_LIST` | DOUBLE | share 0–1 | Share of sales that closed above list price. |
-| `PRICE_DROPS` | DOUBLE | share 0–1 | Share of active listings with a price cut. Metro only. |
-| `OFF_MARKET_IN_TWO_WEEKS` | DOUBLE | share 0–1 | Share of new listings that went pending within two weeks. |
-| `PARENT_METRO_REGION_METRO_CODE` | BIGINT | CBSA or division code | Metro the ZIP belongs to, per Redfin. |
-| `LAST_UPDATED` | VARCHAR | timestamp | When Redfin last refreshed the file. Used for freshness checks. |
+| `MONTHS OF SUPPLY` | DOUBLE | months | Inventory divided by monthly sales. |
+| `MEDIAN DAYS ON MARKET (DAYS)` | DOUBLE | days | Median days on market in the period. |
+| `AVERAGE SALE TO LIST RATIO (%)` | DOUBLE | percent | Mean of sale price divided by list price (100 = at asking). |
+| `SHARE SOLD ABOVE ORIGINAL LIST (%)` | DOUBLE | percent | Share of sales that closed above the original list price. |
+| `PERCENT OFF MARKET IN TWO WEEKS (%)` | DOUBLE | percent | Share of new listings that went pending within two weeks. |
+| `LAST UPDATED` | VARCHAR | date | When Redfin last refreshed the file. Used for freshness checks. |
 
 ## Census Building Permits Survey (BPS)
 
@@ -137,7 +138,9 @@ Files from `https://www2.census.gov/econ/bps/`:
 - CBSA: `CBSA%20(beginning%20Jan%202024)/cbsaYYMMc.txt` (921 rows for 2026-08)
 - County: `County/coYYMMc.txt` (3,018 rows)
 
-`c` is the current-month file; `y` is year to date and includes late corrections. Phase 4 should load monthly `c` files and replace each year with its final `y` file when it appears. Layout reference: [cbsaasc.pdf](https://www2.census.gov/econ/bps/Documentation/cbsaasc.pdf); the county layout is in the same [Documentation](https://www2.census.gov/econ/bps/Documentation/) folder.
+`c` is the current-month file; `y` is year to date and `a` (`County/coYYYYa.txt`) the annual total with late corrections. **Ingestion loads county files only**: monthly `c` files from 2015-01 (`county_monthly`) and annual `a` files from 2015 (`county_annual`, same layout, `survey_date` = `YYYY`). County rows sum to 2023 CBSAs through `dim_county`, which keeps one delineation for every year and avoids the CBSA files' thousands unit and their delineation change in January 2024. Monthly files are not revised after release; use the annual files to check or benchmark yearly sums. Layout reference: [cbsaasc.pdf](https://www2.census.gov/econ/bps/Documentation/cbsaasc.pdf); the county layout is in the same [Documentation](https://www2.census.gov/econ/bps/Documentation/) folder.
+
+**April 2015 gap.** Census's firewall always answers `County/co1504c.txt` with an HTML "Request Rejected" page at HTTP 200, so ingestion skips that file. It loads the year-to-date files `co1503y.txt` and `co1504y.txt` instead (`county_ytd`); staging derives April 2015 as `co1504y` minus `co1503y`. Two historical `failed` rows for `co1504c.txt` remain in `_load_log`.
 
 **Format.** Comma-separated, latin-1, two header rows plus a blank line (skip 3 lines and name the columns). Names are space-padded, with a double space before the state (`Raleigh-Cary  NC`).
 
@@ -165,7 +168,7 @@ Files from `https://www2.census.gov/econ/bps/`:
 
 ## Census ACS 5-year
 
-API `https://api.census.gov/data/2024/acs/acs5` (vintage 2020–2024). The 2025 vintage (2021–2025) returns 404 and is expected in December 2026.
+API `https://api.census.gov/data/{year}/acs/acs5` (profiled: vintage 2020–2024). Ingestion loads vintages 2015 to 2024 for all three geographies; ZCTA and CBSA queries work without state nesting back to 2015. The 2025 vintage (2021–2025) returns 404 and is expected in December 2026.
 
 **Rows.** 33,772 ZCTAs, 3,222 counties (includes Puerto Rico), 935 CBSAs. All 11 study CBSAs are present.
 
@@ -188,7 +191,7 @@ API `https://api.census.gov/data/2024/acs/acs5` (vintage 2020–2024). The 2025 
 
 ## BLS QCEW
 
-File `https://data.bls.gov/cew/data/api/{year}/{qtr}/industry/10.csv` (industry 10 = all industries). 17,729 rows for 2026 Q1.
+File `https://data.bls.gov/cew/data/api/{year}/{qtr}/industry/10.csv` (industry 10 = all industries). 17,729 rows for 2026 Q1. Ingestion loads 2015 Q1 onward, one file per quarter, each fetched once.
 
 **Quirks.**
 
@@ -217,7 +220,7 @@ API `https://api.stlouisfed.org/fred/series/observations?series_id=…&file_type
 | --- | --- | --- | --- | --- | --- |
 | `MORTGAGE30US` | Weekly (Thursday) | NSA | percent | 2026-10-22 | Freddie Mac 30-year fixed mortgage average rate. |
 | `CPIAUCSL` | Monthly | SA | index, 1982–84 = 100 | 2026-09 | CPI for all urban consumers, all items. Used to deflate dollar values. |
-| `LAUMT473498000000003` | Monthly | NSA | percent | 2026-08 | Unemployment rate, Nashville MSA (BLS LAUS). One series per metro. |
+| `NASH947URN`, `ATLA013URN`, … (one per metro, see `config/metros.yml`) | Monthly | NSA | percent | 2026-08 | Unemployment rate per MSA (BLS LAUS). The profile used `LAUMT473498000000003`, Nashville's other ID for the same series. |
 
 | Column | Type | Unit | Definition |
 | --- | --- | --- | --- |
@@ -227,7 +230,7 @@ API `https://api.stlouisfed.org/fred/series/observations?series_id=…&file_type
 
 ## IRS SOI county migration
 
-Files `https://www.irs.gov/pub/irs-soi/countyinflow2223.csv` (90,048 rows) and `countyoutflow2223.csv` (90,358 rows). Latin-1. The 2023–2024 files return 404. The pair "2022–2023" compares addresses on tax returns filed for tax year 2022 with those filed for 2023.
+Files `https://www.irs.gov/pub/irs-soi/countyinflow2223.csv` (90,048 rows) and `countyoutflow2223.csv` (90,358 rows). Latin-1. The 2023–2024 files return 404. Ingestion loads every pair from 2014–2015 on. The pair "2022–2023" compares addresses on tax returns filed for tax year 2022 with those filed for 2023.
 
 **Quirks.**
 
@@ -246,11 +249,11 @@ Files `https://www.irs.gov/pub/irs-soi/countyinflow2223.csv` (90,048 rows) and `
 
 ## HUD Fair Market Rents
 
-API `https://www.huduser.gov/hudapi/public/fmr/data/{entityid}?year=YYYY` (one FMR area) and `fmr/statedata/{ST}?year=YYYY` (all counties in a state). Bearer token from `.env`. The HUD website blocks scripted downloads; use the API.
+API `https://www.huduser.gov/hudapi/public/fmr/data/{entityid}?year=YYYY` (one FMR area) and `fmr/statedata/{ST}?year=YYYY` (all counties in a state). Bearer token from `.env`. The HUD website blocks scripted downloads; use the API. Ingestion calls the area endpoint for the 28 study-metro areas, FY2017 onward, one call per second. Only area calls return Small Area ZIP rents. A year that is not out yet returns HTTP 400 `Invalid year`.
 
 **Quirks.**
 
-- Nashville is a Small Area FMR area (`smallarea_status = 1`): the area call returns 125 ZIPs plus one `MSA level` row. Non-SAFMR areas return one set of values.
+- Nashville is a Small Area FMR area (`smallarea_status = 1`): the area call returns 125 ZIPs plus one `MSA level` row. Non-SAFMR areas return one set of values, as a single object instead of a list. Bronze stores one row per ZIP (or one row), plus the area fields and `fmr_area_code`.
 - County `fips_code` is 10 characters: 5-digit county FIPS + `99999`. Take the first five.
 - FMRs are set at the 40th percentile of gross rent (`FMR Percentile = 40`).
 - Fiscal year *Y* starts 1 October of *Y*−1. FY2027 is current.
@@ -284,7 +287,7 @@ API `https://www.huduser.gov/hudapi/public/usps?type={2|3}&query=All` (type 2 ZI
 
 ## Census CBSA delineation (July 2023)
 
-File `list1_2023.xlsx`. Read range `A3:L5000` and keep rows whose `CBSA Code` is five digits; the bottom rows are footnotes. 1,915 counties.
+File `list1_2023.xlsx`. Read range `A3:L5000` and keep rows whose `CBSA Code` is five digits; the bottom rows are footnotes. 1,915 counties. Bronze reads with `stop_at_empty = true`, which ends at the blank row above the footnotes.
 
 | Column | Type | Unit | Definition |
 | --- | --- | --- | --- |
@@ -337,8 +340,8 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 | Source | Metro-month | ZIP-month |
 | --- | --- | --- |
 | Zillow ZHVI, ZORI | metro file, `RegionID` = `dim_metro.zillow_region_id` | ZIP file, `RegionName` = `dim_zip.zip` |
-| Redfin | `TABLE_ID` in `dim_metro.redfin_table_ids`, monthly rows; split metros need the Phase 5 rule | ZIP parsed from `REGION`, 90-day window keyed on its `PERIOD_END` month (metro-only measures missing) |
-| Census BPS | CBSA file, `cbsa_code` | county file, allocated by `res_ratio` |
+| Redfin | `REGION ID` in `dim_metro.redfin_table_ids`, monthly rows; split metros need the Phase 5 rule | ZIP from `REGION NAME`, rolling three-month window keyed on its `PERIOD END` month |
+| Census BPS | county file summed by `dim_county.cbsa_code` | county file, allocated by `res_ratio` |
 | ACS 5-year | CBSA geography, carried forward to each month of the release year | ZCTA via `dim_zip.zcta`, carried forward |
 | QCEW | `area_fips` = `dim_metro.qcew_area_fips`; monthly employment per month, wages per quarter carried forward | county rows, allocated by `res_ratio` |
 | FRED | mortgage and CPI are national (weekly mortgage averaged to months); LAUS series per metro | metro value repeated for each ZIP in the metro |
@@ -346,12 +349,21 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 | HUD FMR | FMR area per metro (`MSA level` row), annual | Small Area FMR ZIPs where the area uses them, else the metro value |
 | HUD crosswalk, delineation, boundaries | dimensions, not facts | dimensions, not facts |
 
+## Ingestion: raw, bronze and the load log
+
+`.\tasks.ps1 ingest [source ...]` (or `uv run python -m ingest`) runs the extractors in `ingest/`. Sources: `zillow`, `redfin`, `bps`, `acs`, `qcew`, `fred`, `irs_migration`, `hud_fmr`, `hud_crosswalk`, `census_geo` (delineation and boundaries).
+
+- **Raw**: every download lands unchanged in `data/raw/<source>/<load_date>/<file>`.
+- **Bronze**: each file becomes `data/bronze/<source>/<entity>/<file_stem>__<load_date>.parquet`. Every source column is text (boundary `geom` is WKB), plus `_source_file`, `_load_id`, `_loaded_at` (UTC) and `_file_hash`. JSON APIs are flattened: ACS adds `vintage`, FRED adds `series_id`, HUD crosswalk adds `year` and `quarter`.
+- **Rolling vs period files.** Zillow, Redfin, FRED and the HUD crosswalk publish full history at one URL; they are fetched at most once per calendar month. Each monthly load is a complete copy, so staging must read only the newest `_loaded_at` per entity. Period files (a BPS month, a QCEW quarter, an ACS vintage, an IRS pair, an FMR area-year, the geography files) are fetched once.
+- **`_load_log`** (in `data/warehouse.duckdb`): one row per attempt with `load_id`, `source`, `entity`, `url` (API keys replaced by `REDACTED`), `raw_path`, `file_hash` (SHA-256), `bytes`, `row_count`, `status` and `loaded_at`. Status `loaded` wrote bronze. `unchanged` means the hash matched the last load, so the file was dropped. `missing` means the period is not released yet (HTTP 404, or 400 from HUD); it is retried the next month. `failed` is retried on the next run.
+- The skip decision reads only `_load_log`, so a second run in the same month makes no HTTP calls.
+- Downloads retry connection errors, 429 and 5xx up to four times with exponential backoff (2, 4, 8 s), with a 10 s connect and 120 s read timeout.
+- Raw files accumulate one copy per month for rolling sources (Redfin ZIP is about 1.3 GB). Prune old `data/raw/redfin/` folders by hand until a retention rule is needed.
+
 ## Open issues carried forward
 
 | Issue | Phase |
 | --- | --- |
-| Redfin feed stuck at 2026-06-02; confirm the current location or drop Redfin features to metro grain from another source. | 4 |
-| Switch ZORI downloads to the SA files. | 4 |
-| Confirm the LAUS series IDs for the ten metros other than Nashville. | 4 |
 | Redfin Dallas-Fort Worth and Seattle are split into divisions; pick the metro rule. | 5 |
 | Redfin ZIP price outliers (999,999,999) need range tests. | 7 |
