@@ -173,8 +173,23 @@ def run(extractors, data=DATA, today=None):
             ex.source,
             ", ".join(f"{n} {s}" for s, n in sorted(counts.items())),
         )
+    register_views(con, data)
     con.close()
     return failed
+
+
+def register_views(con, data):
+    """Create the layer schemas and expose each bronze entity as bronze.<source>__<entity>, over every load."""
+    for schema in ("bronze", "silver", "gold", "ml"):
+        con.execute(f"create schema if not exists {schema}")
+    for d in sorted((data / "bronze").glob("*/*")):
+        if any(d.glob("*.parquet")):
+            # absolute path so the view works from any working directory; rerun ingest after moving the repo
+            files = lit((d.resolve() / "*.parquet").as_posix())
+            con.execute(
+                f"create or replace view bronze.{d.parent.name}__{d.name} as "
+                f"select * from read_parquet({files}, union_by_name = true)"
+            )
 
 
 def load_file(con, session, ex, f, data, today):

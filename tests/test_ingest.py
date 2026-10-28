@@ -79,6 +79,9 @@ def test_extractor_lands_bronze(tmp_path, served, source, filename, rows):
     assert base.run([ex], data=tmp_path, today=TODAY) == 0
 
     assert (tmp_path / "raw" / source / TODAY.isoformat() / filename).exists()
+    with duckdb.connect(str(tmp_path / "warehouse.duckdb")) as wh:
+        view = f"bronze.{source}__{f.entity}"
+        assert wh.execute(f"select count(*) from {view}").fetchall() == [(rows,)]
     out = (
         tmp_path
         / "bronze"

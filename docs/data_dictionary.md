@@ -54,7 +54,7 @@ Each source names the 11 metros differently. The Zillow, Redfin, FRED and HUD FM
 Notes:
 
 - Zillow's metro file has no CBSA code. Match on `RegionID` (above), never on name: `Austin, TX` and `Austin, MN` both exist.
-- Redfin splits Dallas-Fort Worth and Seattle into metro divisions, and Seattle uses pre-2023 divisions (no Everett, 21794). Redfin medians cannot be added up, so for these two metros use the largest division (19124 Dallas, 42644 Seattle) or build the metro from Redfin ZIP rows. Phase 5 decides.
+- Redfin splits Dallas-Fort Worth and Seattle into metro divisions, and Seattle uses pre-2023 divisions (no Everett, 21794). Each pair covers the whole CBSA. Redfin medians cannot be added up; the metro rule (sum counts, weight medians by homes sold) is in the [warehouse design](warehouse_design.md#geography-rules).
 - The ZIP-level Zillow `Metro` column holds pre-2023 CBSA titles (e.g. `Denver-Aurora-Lakewood, CO`) and is null for 12.4% of ZHVI ZIPs. Assign ZIPs to metros with the HUD crosswalk instead.
 - FRED metro unemployment uses the monthly NSA series whose IDs end in `URN` (e.g. `NASH947URN`, `DALL148URN`), found with `fred/series/search`. The `LAUMT…03` pattern only exists for Nashville. IDs are in `config/metros.yml`; all 11 start in 1990 (Seattle 1994).
 - HUD FMR areas: each metro has a main area (`METRO{cbsa}M{cbsa}`) and possibly sub-areas (`…MM7600`) or single-county areas HUD splits off (`…N13035`). All 28 study-metro area codes are in `config/metros.yml`. Dallas-Fort Worth is split into Dallas and Fort Worth areas; Seattle into Seattle-Bellevue and Tacoma.
@@ -365,5 +365,4 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 
 | Issue | Phase |
 | --- | --- |
-| Redfin Dallas-Fort Worth and Seattle are split into divisions; pick the metro rule. | 5 |
-| Redfin ZIP price outliers (999,999,999) need range tests. | 7 |
+| Redfin ZIP price outliers (217 rows above 10 million USD) need range tests. | 7 |

@@ -181,13 +181,13 @@ One Python extractor per source downloads the data, records what it fetched and 
 
 Set up a DuckDB warehouse whose layers make it obvious what is raw, cleaned and analysis-ready.
 
-- [ ] Create `warehouse.duckdb` with schemas `bronze`, `silver`, `gold` and `ml`
-- [ ] Register bronze Parquet files as views
-- [ ] Fix naming: `stg_<source>__<entity>`, `int_<topic>`, `dim_` and `fct_`, `mart_`
-- [ ] Fix the two target grains: `metro_month` (cbsa_code, month) and `zip_month` (zip, month)
-- [ ] Set the month rule: first-of-month dates; quarterly and annual values carried forward and flagged `is_carried_forward`
-- [ ] Sketch a star schema: facts for prices, rents, market activity, permits, wages and migration; dimensions for geography and date
-- [ ] Draw the entity diagram in Mermaid or dbdiagram.io and save it to `docs/`
+- [x] Create `warehouse.duckdb` with schemas `bronze`, `silver`, `gold` and `ml`
+- [x] Register bronze Parquet files as views
+- [x] Fix naming: `stg_<source>__<entity>`, `int_<topic>`, `dim_` and `fct_`, `mart_`
+- [x] Fix the two target grains: `metro_month` (cbsa_code, month) and `zip_month` (zip, month)
+- [x] Set the month rule: first-of-month dates; quarterly and annual values carried forward and flagged `is_carried_forward`
+- [x] Sketch a star schema: facts for prices, rents, market activity, permits, wages and migration; dimensions for geography and date
+- [x] Draw the entity diagram in Mermaid or dbdiagram.io and save it to `docs/`
 
 **Deliverable:** the warehouse file and its diagram. **Done when:** bronze tables query in DuckDB and the diagram covers every planned model.
 

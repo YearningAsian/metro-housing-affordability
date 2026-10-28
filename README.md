@@ -52,6 +52,8 @@ All free and public; no scraping.
 
 Keys, units, release lags and quirks for each source are in the [data dictionary](docs/data_dictionary.md), backed by the [profiling notebook](notebooks/02_source_profiling.ipynb).
 
+The warehouse layers, naming, grains and planned models are in the [warehouse design](docs/warehouse_design.md).
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).
