@@ -15,8 +15,10 @@ switch ($Task) {
     "lint" { Invoke-Native uv run pre-commit run --all-files }
     # dbt resolves data/ and config/ paths from the repo root
     "build" { Invoke-Native uv run dbt build --project-dir dbt --profiles-dir dbt }
+    # build the dbt docs site and open it at http://localhost:8080
+    "docs" { Invoke-Native uv run dbt docs generate --project-dir dbt --profiles-dir dbt; Invoke-Native uv run dbt docs serve --project-dir dbt --profiles-dir dbt }
     # download new source files into data/raw and data/bronze; skips what this month already has
     "ingest" { Invoke-Native uv run python -m ingest @Rest }
     "test" { Invoke-Native uv run pytest }
-    default { Write-Host "Tasks: setup, lint, test, ingest [source ...], build" }
+    default { Write-Host "Tasks: setup, lint, test, ingest [source ...], build, docs" }
 }

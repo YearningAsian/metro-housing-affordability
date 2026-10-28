@@ -199,15 +199,15 @@ Part C turns raw files into two tested, analysis-ready tables that refresh thems
 
 ### Phase 6: dbt models (weeks 7–8)
 
-- [ ] Start a dbt project on `dbt-duckdb`; declare bronze tables as sources with freshness rules
-- [ ] Write one staging model per source: snake_case names, proper types, ZIP and county FIPS as zero-padded text
-- [ ] Unpivot Zillow's one-column-per-month files into long rows (region, month, value)
-- [ ] Roll Redfin weekly data up to months; use only seasonally adjusted series or only unadjusted ones, never a mix
-- [ ] Allocate county-level data (wages, permits, migration) to ZIPs with the crosswalk ratios where ZIP grain needs it
-- [ ] Build intermediate models: `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`
-- [ ] Build the marts `mart_metro_month` and `mart_zip_month`, one row per place per month
-- [ ] Add derived metrics: price-to-income, rent-to-wage, year-over-year growth, permits per 1,000 residents, net migration rate
-- [ ] Describe every model and column in `schema.yml`; generate `dbt docs`
+- [x] Start a dbt project on `dbt-duckdb`; declare bronze tables as sources with freshness rules
+- [x] Write one staging model per source: snake_case names, proper types, ZIP and county FIPS as zero-padded text
+- [x] Unpivot Zillow's one-column-per-month files into long rows (region, month, value)
+- [x] Roll Redfin weekly data up to months; use only seasonally adjusted series or only unadjusted ones, never a mix (done differently: Redfin's monthly not-seasonally-adjusted files replace the weekly data, so no roll-up is needed)
+- [x] Allocate county-level data (wages, permits, migration) to ZIPs with the crosswalk ratios where ZIP grain needs it (ZIPs get `res_ratio`-weighted county rates; counts are not split)
+- [x] Build intermediate models: `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`
+- [x] Build the marts `mart_metro_month` and `mart_zip_month`, one row per place per month
+- [x] Add derived metrics: price-to-income, rent-to-wage, year-over-year growth, permits per 1,000 residents, net migration rate
+- [x] Describe every model and column in `schema.yml` (`_staging.yml`, `_intermediate.yml`, `_marts.yml`); generate `dbt docs`
 
 **Deliverable:** the two marts. **Done when:** `dbt build` passes and each mart has exactly one row per key.
 

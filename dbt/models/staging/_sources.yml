@@ -1,0 +1,82 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: >
+      Views over the bronze Parquet files, one per source entity, created by `python -m ingest`. All columns are
+      text plus _source_file, _load_id, _loaded_at and _file_hash. Rolling sources keep one copy per monthly load.
+    schema: bronze
+    config:
+      loaded_at_field: _loaded_at
+      # monthly sources: a new load is expected every month
+      freshness:
+        warn_after: {count: 35, period: day}
+        error_after: {count: 65, period: day}
+    tables:
+      - name: zillow__metro_zhvi
+        description: Zillow metro ZHVI (all homes, mid tier, smoothed, SA), one column per month.
+      - name: zillow__zip_zhvi
+        description: Zillow ZIP ZHVI, one column per month.
+      - name: zillow__metro_zori
+        description: Zillow metro ZORI (all homes, smoothed, SA), one column per month.
+      - name: zillow__zip_zori
+        description: Zillow ZIP ZORI, one column per month.
+      - name: redfin__metros
+        description: Redfin housing market data, metros and metro divisions, monthly, all residential.
+      - name: redfin__zips
+        description: Redfin housing market data, ZIPs, rolling three-month windows, all residential.
+      - name: bps__county_monthly
+        description: Census building permits, county, one file per month (April 2015 is missing).
+      - name: bps__county_ytd
+        description: Census building permits, county, year to date for March and April 2015 only.
+        config:
+          freshness: null
+      - name: bps__county_annual
+        description: Census building permits, county, annual totals with late corrections.
+        config:
+          freshness:
+            warn_after: {count: 400, period: day}
+            error_after: null
+      - name: acs__zcta
+        description: ACS 5-year estimates by ZCTA, one load per vintage.
+        config: &yearly
+          freshness:
+            warn_after: {count: 400, period: day}
+            error_after: null
+      - name: acs__county
+        description: ACS 5-year estimates by county.
+        config: *yearly
+      - name: acs__cbsa
+        description: ACS 5-year estimates by CBSA.
+        config: *yearly
+      - name: qcew__industry_10
+        description: BLS QCEW all-industry totals, one file per quarter.
+        config:
+          freshness:
+            warn_after: {count: 100, period: day}
+            error_after: {count: 200, period: day}
+      - name: fred__observations
+        description: FRED observations for the national and metro series in config/metros.yml.
+      - name: irs_migration__inflow
+        description: IRS SOI county inflows, one file per year pair.
+        config: *yearly
+      - name: irs_migration__outflow
+        description: IRS SOI county outflows, one file per year pair.
+        config: *yearly
+      - name: hud_fmr__fmr
+        description: HUD Fair Market Rents for the study metros' FMR areas, one file per area and fiscal year.
+        config: *yearly
+      - name: hud_crosswalk__zip_county
+        description: HUD-USPS ZIP-to-county crosswalk, latest quarter.
+      - name: hud_crosswalk__zip_cbsa
+        description: HUD-USPS ZIP-to-CBSA crosswalk, latest quarter. Only used as a cross-check.
+      - name: census_geo__cbsa_delineation
+        description: Census CBSA delineation, July 2023. Footnote rows are dropped in staging.
+        config: &static
+          freshness: null
+      - name: census_geo__county_shapes
+        description: Census cartographic boundaries, counties, 2024.
+        config: *static
+      - name: census_geo__zcta_shapes
+        description: Census cartographic boundaries, ZCTAs, 2020.
+        config: *static

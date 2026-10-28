@@ -1,26 +1,26 @@
 # Warehouse design
 
-How the DuckDB warehouse (`data/warehouse.duckdb`) is laid out, what every planned model is called, and which grain and month rules the dbt models in Phase 6 follow. Source facts (keys, units, quirks) live in the [data dictionary](data_dictionary.md).
+How the DuckDB warehouse (`data/warehouse.duckdb`) is laid out, what every model is called, and which grain and month rules the dbt models follow. Source facts (keys, units, quirks) live in the [data dictionary](data_dictionary.md).
 
 ## Layers
 
 | Schema | Holds | Built by | Materialized |
 | --- | --- | --- | --- |
 | `bronze` | One view per bronze entity, `bronze.<source>__<entity>`, over every Parquet load in `data/bronze/<source>/<entity>/`. All columns are text plus `_source_file`, `_load_id`, `_loaded_at`, `_file_hash`. | `python -m ingest` (`register_views` runs at the end of every run) | view |
-| `silver` | Staging (`stg_`) and intermediate (`int_`) models: typed, cleaned, conformed to month and geography. | dbt | table (staging may be views) |
+| `silver` | Staging (`stg_`) and intermediate (`int_`) models: typed, cleaned, conformed to month and geography. | dbt | view (staging), table (intermediate) |
 | `gold` | Dimensions (`dim_`), facts (`fct_`) and marts (`mart_`). The dashboard, models and exports read only from here. | dbt | table |
 | `ml` | Feature tables built by dbt and predictions written by the training code. | dbt and Python | table |
 
-`main` keeps `_load_log` (written by ingestion) and, until Phase 6 moves them, the Phase 3 geography models.
+`main` keeps only `_load_log` (written by ingestion). A `generate_schema_name` macro makes dbt build into the configured schema as is (its default would be `main_silver`).
 
-The bronze views read absolute paths, so they work from any working directory. After moving the repo, rerun `.\tasks.ps1 ingest` to rebuild them. A bronze view returns every monthly copy of a rolling source (Zillow, Redfin, FRED, HUD crosswalk); staging keeps only the newest `_loaded_at` per entity.
+The bronze views read absolute paths, so they work from any working directory. After moving the repo, rerun `.\tasks.ps1 ingest` to rebuild them; each run drops and recreates the `bronze` schema, so a removed entity leaves no stale view. A bronze view returns every monthly copy of a rolling source (Zillow, Redfin, FRED, HUD crosswalk); staging keeps only the newest `_loaded_at` per source file (the `latest_load()` macro).
 
 ## Naming
 
 | Prefix | Schema | Rule | Example |
 | --- | --- | --- | --- |
-| `stg_<source>__<entity>` | silver | One per bronze view, same `<source>__<entity>` name. Renames to snake_case, casts types, keeps ZIP and FIPS codes as zero-padded text, dedups to the newest load. No joins. | `stg_redfin__metros` |
-| `int_<topic>` | silver | One per topic. Takes facts to the two target grains: applies the month rule, rolls counties up to metros, allocates counties to ZIPs. | `int_supply` |
+| `stg_<source>__<entity>` | silver | One per source, or per entity when a source's entities differ in layout. Entities with the same layout are unioned with a `geo_level` or `file_type` column. Renames to snake_case, casts types, keeps ZIP and FIPS codes as zero-padded text, keeps the newest load. No joins. | `stg_redfin__market_tracker` |
+| `int_<topic>` | silver | One per topic, plus `int_spine`. Takes facts to the two target grains: applies the month rule, rolls counties up to metros, carries county rates to ZIPs. Each returns exactly the `int_spine` rows. | `int_supply` |
 | `dim_<entity>` | gold | One row per member. | `dim_zip` |
 | `fct_<topic>` | gold | One row per geography per native period. Keeps the source's own grain; no carry-forward. | `fct_permits` |
 | `mart_<grain>` | gold | Wide, one row per place per month. | `mart_metro_month` |
@@ -32,13 +32,13 @@ Columns are snake_case with the unit in the name when it is not obvious (`value_
 - **`metro_month`**: one row per (`cbsa_code`, `month`) for the 11 study metros in `dim_metro`.
 - **`zip_month`**: one row per (`zip`, `month`) for every `dim_zip` ZIP with `is_po_box_only = false`.
 
-Both marts run from 2015-01 (the first month every source covers) through the latest month with a Zillow ZHVI value. Facts keep each source's full history.
+Both marts run from 2015-01 (the first month every source covers) through the latest month with a Zillow ZHVI value; `int_spine` holds those rows. Facts keep each source's full history but only the study geographies (study metros, their counties and their ZIPs).
 
 ## Month rule
 
 - `month` is a DATE on the first day of the month. Zillow month-end headers, Redfin `PERIOD BEGIN`, BPS `survey_date` and FRED dates all convert to it.
-- Redfin ZIP rows are trailing three-month windows; each window is keyed on its `PERIOD END` month.
-- Weekly FRED series (`MORTGAGE30US`) become the mean of the weeks that start in the month.
+- Redfin ZIP rows are trailing three-month windows; each window is keyed on its `PERIOD END` month. Redfin's monthly files replace the weekly roll-up the plan first named, and the feed has only not-seasonally-adjusted series, so SA and NSA never mix.
+- Weekly FRED series (`MORTGAGE30US`) become the mean of the observations dated in the month.
 - A quarterly or annual value applies to every month it covers: QCEW Q1 to January through March, an ACS 5-year vintage ending *Y* to the 12 months of *Y*, an IRS pair (*Y*-1, *Y*) to the 12 months of *Y*, HUD FMR fiscal year *Y* to October *Y*-1 through September *Y*.
 - Months after the latest published period repeat the latest value and set `<topic>_is_carried_forward = true` (for example `income_is_carried_forward`). The flag is false wherever the value comes from the month's own period. Each mart also carries the source period (`income_acs_vintage`, `wages_quarter`, `migration_tax_year`) so a reader can see how stale a value is.
 - Marts align values to their reference period, not their release date. The Phase 11 features apply the release lags in the data dictionary's point-in-time rule.
@@ -47,7 +47,8 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 
 - **Metro**: CBSA code from the July 2023 delineation. County data rolls up through `dim_county.cbsa_code`; additive measures (permits, migration counts) are summed.
 - **Redfin Dallas-Fort Worth and Seattle**: Redfin reports these as metro divisions (19124 and 23104; 42644 and 45104). Each pair covers the whole CBSA (Seattle's pre-2023 42644 includes Everett). The metro row sums the counts (homes sold, pending sales, new and active listings, inventory) across both divisions and recomputes months of supply from those sums. Medians and percentages are averaged weighted by homes sold and flagged `is_division_blend = true`. They are an approximation; a true metro median would need transaction data.
-- **ZIP**: county counts (permits, migration) are allocated to ZIPs by `stg_hud_crosswalk__zip_county.res_ratio`. County rates and averages (wages, unemployment) are not allocated; a ZIP takes its primary county's value (`dim_zip.county_fips`). ACS values join through `dim_zip.zcta`.
+- **ZIP**: county data reaches a ZIP as the average of its counties' rates or averages (permits per 1,000, net migration rate, average weekly wage), weighted by `stg_hud_crosswalk__zip_county.res_ratio`. County counts (permit units, employment, net migrants) are not split across ZIPs and stay null at ZIP grain. A ZIP takes its metro's unemployment rate. ACS values join through `dim_zip.zcta`.
+- **HUD FMR**: a metro takes the area-wide FMR of its core FMR area (the first in `config/metros.yml` `hud_fmr_areas`). A ZIP takes its Small Area FMR when HUD publishes one for that fiscal year, else the metro value. ZIPs in the peripheral single-county FMR areas get the core value (a known shortcut).
 
 ## Star schema
 
@@ -56,7 +57,7 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 | Model | Key | Contents |
 | --- | --- | --- |
 | `dim_date` | `month` | Every month from 2012-01 through the current month: `year`, `quarter`, `month_of_year`, `quarter_start`. |
-| `dim_metro` | `cbsa_code` | The 11 study metros and each source's code for them (built in Phase 3). |
+| `dim_metro` | `cbsa_code` | The 11 study metros and each source's code for them: Zillow region, Redfin regions, QCEW area, FRED unemployment series, HUD FMR areas. |
 | `dim_county` | `county_fips` | Every US county with its CBSA, metro division and `is_study_metro` (Phase 3). |
 | `dim_zip` | `zip` | Study-metro ZIPs with primary county, CBSA and ZCTA (Phase 3). |
 
@@ -66,41 +67,43 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 
 | Model | Grain | Measures | Source |
 | --- | --- | --- | --- |
-| `fct_home_prices` | (`geo_level`, `geo_code`, `month`); zip and metro | `zhvi_usd`, `median_sale_price_usd`, `median_sale_ppsf_usd`, `median_list_price_usd`, `is_division_blend` | Zillow ZHVI, Redfin |
+| `fct_home_prices` | (`geo_level`, `geo_code`, `month`); zip and metro | `zhvi_usd` | Zillow ZHVI |
 | `fct_rents` | (`geo_level`, `geo_code`, `month`); zip and metro | `zori_usd` | Zillow ZORI |
 | `fct_fair_market_rents` | (`fmr_area_code`, `zip`, `fiscal_year`); `zip` null for area-wide FMRs | `fmr_0br_usd` to `fmr_4br_usd`, `is_small_area` | HUD FMR |
-| `fct_market_activity` | (`geo_level`, `geo_code`, `month`); zip and metro | `homes_sold`, `pending_sales`, `new_listings`, `active_listings`, `inventory`, `months_of_supply`, `median_days_on_market`, `sale_to_list_pct`, `sold_above_list_pct`, `off_market_in_two_weeks_pct`, `is_division_blend` | Redfin |
-| `fct_permits` | (`county_fips`, `month`) | `units_1`, `units_2`, `units_3_4`, `units_5_plus`, `total_units`, `buildings`, `value_usd` | BPS monthly; April 2015 from the year-to-date files |
-| `fct_wages` | (`geo_level`, `geo_code`, `month`); county (QCEW `agglvl_code` 70) and metro (40) | `employment` (monthly), `avg_weekly_wage_usd`, `total_quarterly_wages_usd`, `establishments` (quarterly), `quarter` | QCEW, all industries, all ownerships |
+| `fct_market_activity` | (`geo_level`, `geo_code`, `month`); zip and metro | `homes_sold`, `pending_sales`, `new_listings`, `active_listings`, `inventory`, `months_of_supply`, `median_days_on_market`, `sale_to_list_pct`, `sold_above_list_pct`, `off_market_in_two_weeks_pct`, `median_sale_price_usd`, `median_sale_ppsf_usd`, `median_list_price_usd`, `median_list_ppsf_usd`, `is_division_blend` | Redfin |
+| `fct_permits` | (`county_fips`, `month`) | `units_1`, `units_2`, `units_3_4`, `units_5_plus`, `total_units`, `is_estimated` | BPS monthly; April 2015 from the year-to-date files; annual totals spread over 12 months where the pre-2022 monthly sample lacks the county |
+| `fct_wages` | (`geo_level`, `geo_code`, `month`); county (QCEW `agglvl_code` 70) and metro (40) | `employment` (monthly), `avg_weekly_wage_usd`, `total_wages_usd`, `establishments` (quarterly), `quarter` | QCEW, all industries, all ownerships |
 | `fct_migration` | (`county_fips`, `tax_year`) | `inflow_returns`, `inflow_people`, `inflow_agi_usd`, `outflow_returns`, `outflow_people`, `outflow_agi_usd`, `net_people` | IRS SOI |
-| `fct_income` | (`geo_level`, `geo_code`, `acs_vintage`); zcta, county and metro | `median_household_income_usd`, `population`, `median_gross_rent_usd`, `rent_pct_income` | ACS 5-year |
+| `fct_income` | (`geo_level`, `geo_code`, `acs_vintage`); zip (through its ZCTA), county and metro | `median_household_income_usd`, `population`, `median_gross_rent_usd`, `rent_pct_income` | ACS 5-year |
 | `fct_economy` | (`series_id`, `month`); `cbsa_code` null for national series | `value` | FRED: mortgage rate, CPI, metro unemployment rate |
 
-BPS annual files are not a fact; Phase 7 tests that yearly sums of `fct_permits` match them.
+Before 2022 the BPS monthly county files cover only a sample of about 740 counties, and 19 of the 96 study counties (Tarrant and Denton among them) are missing from them for 2015-2021. For such a county-year, `fct_permits` spreads the annual total evenly over the 12 months and sets `is_estimated`. BPS annual files are not a fact of their own; Phase 7 tests that yearly sums of `fct_permits` match them.
 
 ### Marts (gold)
 
-`mart_metro_month` and `mart_zip_month` join every intermediate model at their grain and add the derived metrics:
+`mart_metro_month` and `mart_zip_month` share one macro (`place_month`). It left-joins every intermediate model onto `int_spine` and adds the derived metrics:
 
 - `price_to_income` = ZHVI / ACS median household income
 - `rent_to_wage` = ZORI / (average weekly wage × 52 / 12)
-- year-over-year growth for prices, rents, wages and employment
-- `permits_per_1000` = trailing 12-month permitted units / population × 1,000
-- `net_migration_rate` = net migrants / population × 1,000
+- `zhvi_yoy_growth`, `zori_yoy_growth`, `avg_weekly_wage_yoy_growth`, `employment_yoy_growth`: change from 12 months earlier, as a fraction
+- `permits_per_1000` = trailing 12-month permitted units / population × 1,000 (from `int_supply`)
+- `net_migration_rate` = net migrants / population × 1,000 (from `int_migration`)
 - national mortgage rate and CPI on every row; metro unemployment rate
 
-## Every planned model
+Every column is described in the schema YAML; descriptions shared by the int_ models and the marts live once in `dbt/models/_columns.md` as doc blocks. Run `.\tasks.ps1 docs` to browse them.
+
+## Every model
 
 | Layer | Models |
 | --- | --- |
-| Staging (silver) | `stg_config__metros`, `stg_zillow__metro_zhvi`, `stg_zillow__zip_zhvi`, `stg_zillow__metro_zori`, `stg_zillow__zip_zori`, `stg_redfin__metros`, `stg_redfin__zips`, `stg_bps__county_monthly`, `stg_bps__county_ytd`, `stg_bps__county_annual`, `stg_acs__zcta`, `stg_acs__county`, `stg_acs__cbsa`, `stg_qcew__industry_10`, `stg_fred__observations`, `stg_irs_migration__inflow`, `stg_irs_migration__outflow`, `stg_hud_fmr__fmr`, `stg_hud_crosswalk__zip_county`, `stg_hud_crosswalk__zip_cbsa`, `stg_census_geo__cbsa_delineation`, `stg_census_geo__county_shapes`, `stg_census_geo__zcta_shapes`, `stg_census_geo__cbsa_shapes` |
-| Intermediate (silver) | `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`, `int_income` |
+| Staging (silver) | `stg_config__metros`, `stg_zillow__indexes`, `stg_redfin__market_tracker`, `stg_bps__permits`, `stg_acs__estimates`, `stg_qcew__industry_10`, `stg_fred__observations`, `stg_irs_migration__flows`, `stg_hud_fmr__fmr`, `stg_hud_crosswalk__zip_county`, `stg_census_geo__cbsa_delineation`, `stg_census_geo__county_shapes`, `stg_census_geo__zcta_shapes` |
+| Intermediate (silver) | `int_spine`, `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`, `int_income` |
 | Dimensions (gold) | `dim_date`, `dim_metro`, `dim_county`, `dim_zip` |
 | Facts (gold) | `fct_home_prices`, `fct_rents`, `fct_fair_market_rents`, `fct_market_activity`, `fct_permits`, `fct_wages`, `fct_migration`, `fct_income`, `fct_economy` |
-| Marts (gold) | `mart_metro_month`, `mart_zip_month`, `mart_zip_forecast` (a view over `ml.predictions`, Phase 12) |
+| Marts (gold) | `mart_metro_month`, `mart_zip_month`; later `mart_zip_forecast` (a view over `ml.predictions`, Phase 12) |
 | ML | `ml.features_zip_month` (dbt, Phase 11), `ml.predictions` (written by the training code, Phase 12) |
 
-`int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate goes through `int_wages`.
+The HUD ZIP-to-CBSA crosswalk and the CBSA shapes have no staging model: a dbt test reads the crosswalk from bronze as a cross-check of `dim_zip`, and the shapes stay in bronze for maps. `int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate goes through `int_wages`.
 
 ### Star schema diagram
 
@@ -127,7 +130,7 @@ erDiagram
     dim_county ||--o{ fct_migration : "county_fips"
     dim_metro ||--o{ fct_income : "cbsa_code"
     dim_county ||--o{ fct_income : "county rows"
-    dim_zip ||--o{ fct_income : "zcta rows"
+    dim_zip ||--o{ fct_income : "zip rows"
     dim_date ||--o{ fct_economy : "month"
     dim_metro ||--o{ fct_economy : "metro series"
     dim_metro ||--o{ mart_metro_month : "cbsa_code"
@@ -247,6 +250,7 @@ flowchart LR
         fct_economy
     end
     subgraph intermediate [silver: intermediate]
+        int_spine
         int_prices
         int_rents
         int_supply
@@ -257,7 +261,7 @@ flowchart LR
     subgraph marts [gold: marts]
         mart_metro_month
         mart_zip_month
-        mart_zip_forecast
+        mart_zip_forecast[mart_zip_forecast, Phase 12]
     end
     subgraph ml
         features[ml.features_zip_month]
@@ -282,8 +286,8 @@ flowchart LR
     s_xwalk --> dim_zip
     s_geo --> dim_zip
 
+    dims --> facts
     s_zillow --> fct_home_prices
-    s_redfin --> fct_home_prices
     s_zillow --> fct_rents
     s_fmr --> fct_fair_market_rents
     s_redfin --> fct_market_activity
@@ -293,7 +297,13 @@ flowchart LR
     s_acs --> fct_income
     s_fred --> fct_economy
 
+    dim_date --> int_spine
+    dim_metro --> int_spine
+    dim_zip --> int_spine
+    fct_home_prices --> int_spine
+    int_spine --> intermediate
     fct_home_prices --> int_prices
+    fct_market_activity --> int_prices
     fct_rents --> int_rents
     fct_fair_market_rents --> int_rents
     fct_market_activity --> int_supply
@@ -302,34 +312,18 @@ flowchart LR
     fct_economy --> int_wages
     fct_migration --> int_migration
     fct_income --> int_income
+    fct_income --> int_supply
+    fct_income --> int_migration
     s_xwalk --> int_supply
+    s_xwalk --> int_wages
     s_xwalk --> int_migration
 
-    int_prices --> mart_metro_month
-    int_rents --> mart_metro_month
-    int_supply --> mart_metro_month
-    int_wages --> mart_metro_month
-    int_migration --> mart_metro_month
-    int_income --> mart_metro_month
+    intermediate --> mart_metro_month
+    intermediate --> mart_zip_month
     fct_economy --> mart_metro_month
-    dim_date --> mart_metro_month
-    int_prices --> mart_zip_month
-    int_rents --> mart_zip_month
-    int_supply --> mart_zip_month
-    int_wages --> mart_zip_month
-    int_migration --> mart_zip_month
-    int_income --> mart_zip_month
     fct_economy --> mart_zip_month
-    dim_date --> mart_zip_month
-    dim_zip --> mart_zip_month
 
     mart_zip_month --> features
     features --> predictions
     predictions --> mart_zip_forecast
 ```
-
-## Moving to this layout (Phase 6)
-
-- Add a `generate_schema_name` macro that uses the configured schema as is (dbt's default would build `main_silver`), and set `+schema` per model folder: `models/staging` and `models/intermediate` to silver, `models/marts` (dims, facts, marts) to gold, `models/ml` to ml.
-- Move the Phase 3 geography models into those folders, rename `stg_hud__zip_county` to `stg_hud_crosswalk__zip_county`, and point their sources at the bronze views instead of `data/samples/`. Then drop the old copies in `main`, and `notebooks/download_samples.py` can go.
-- Redfin's monthly files replace the weekly roll-up planned in Phase 6. The feed is NSA only, so the "never mix SA and NSA" rule holds automatically.

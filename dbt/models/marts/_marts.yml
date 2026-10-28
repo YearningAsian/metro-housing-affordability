@@ -1,0 +1,394 @@
+version: 2
+
+# Gold: dimensions, facts filtered to the study geographies, and the two place-month marts.
+models:
+  - name: dim_county
+    description: Every US county (2024 cartographic boundaries) with its July 2023 CBSA, metro division and CSA.
+    columns:
+      - name: county_fips
+        description: 5-char county FIPS.
+        data_tests: [unique, not_null]
+      - name: state_fips
+        description: 2-char state FIPS.
+      - name: state_code
+        description: Two-letter state abbreviation.
+      - name: county_name
+        description: County name with its legal suffix, e.g. Davidson County.
+      - name: cbsa_code
+        description: CBSA the county belongs to; null outside any CBSA.
+      - name: cbsa_title
+        description: CBSA title.
+      - name: is_metropolitan
+        description: True when the CBSA is metropolitan (not micropolitan).
+      - name: metro_division_code
+        description: Metro division within the CBSA; null for CBSAs without divisions.
+      - name: metro_division_title
+        description: Metro division title.
+      - name: csa_code
+        description: Combined statistical area code.
+      - name: is_central_county
+        description: True for the CBSA's central (not outlying) counties.
+      - name: is_study_metro
+        description: True when the county is in one of the study metros.
+
+  - name: dim_metro
+    description: The study metros, with the code each source uses for them.
+    columns:
+      - name: cbsa_code
+        description: 5-digit CBSA code.
+        data_tests: [unique, not_null]
+      - name: metro_name
+        description: Short metro name from config/metros.yml.
+      - name: role
+        description: core (the four metros the project studies) or comparison.
+      - name: cbsa_title
+        description: Official 2023 CBSA title. Null would mean the code in config/metros.yml is not a 2023 CBSA.
+        data_tests: [not_null]
+      - name: is_metropolitan
+        description: True for metropolitan (not micropolitan) areas.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [true]
+      - name: county_count
+        description: Counties in the CBSA.
+      - name: metro_division_codes
+        description: The CBSA's metro division codes; null when it has none.
+      - name: zillow_region_id
+        description: Zillow metro RegionID.
+        data_tests: [unique, not_null]
+      - name: redfin_table_ids
+        description: Redfin metro TABLE_IDs (CBSA, or metro divisions for Dallas-Fort Worth and Seattle).
+      - name: fred_unemployment_series
+        description: FRED series id of the metro's unemployment rate.
+        data_tests: [unique, not_null]
+      - name: hud_fmr_areas
+        description: HUD FMR area codes in the metro; the first is the core area the marts use.
+      - name: qcew_area_fips
+        description: QCEW MSA area code, C + first four CBSA digits.
+
+  - name: dim_zip
+    description: >
+      ZIPs whose largest residential share lies in a study metro, one row per ZIP. The ZIP's county and metro
+      come from that largest share.
+    columns:
+      - name: zip
+        description: USPS ZIP code, 5-char text.
+        data_tests: [unique, not_null]
+      - name: county_fips
+        description: County with the largest share of the ZIP's residential addresses.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_county')
+                field: county_fips
+      - name: cbsa_code
+        description: Study metro of that county.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metro')
+                field: cbsa_code
+      - name: metro_division_code
+        description: Metro division of that county, if any.
+      - name: primary_county_res_ratio
+        description: Share (0-1) of the ZIP's residential addresses in that county.
+      - name: county_count
+        description: Number of counties the ZIP touches.
+      - name: zcta
+        description: ZCTA with the same code (2020 ZCTAs), for ACS joins and map shapes. Null when there is none.
+      - name: has_zcta
+        description: True when zcta is set.
+      - name: is_po_box_only
+        description: True when the ZIP has no residential addresses (PO-box or business-only ZIP). Left out of the marts.
+
+  - name: dim_date
+    description: One row per month from January 2012 to the current month.
+    columns:
+      - name: month
+        description: "{{ doc('month') }}"
+        data_tests: [unique, not_null]
+      - name: year
+        description: Calendar year.
+      - name: quarter
+        description: Quarter, 1-4.
+      - name: month_of_year
+        description: Month number, 1-12.
+      - name: quarter_start
+        description: First day of the quarter.
+
+  - name: fct_home_prices
+    description: Zillow ZHVI for the study metros and their ZIPs, one row per place and month.
+    data_tests: &place_month_key
+      - unique:
+          arguments:
+            column_name: "geo_level || geo_code || month"
+    columns:
+      - &geo_level {name: geo_level, description: "{{ doc('geo_level') }}", data_tests: [not_null]}
+      - &geo_code {name: geo_code, description: "{{ doc('geo_code') }}", data_tests: [not_null]}
+      - &cbsa_code {name: cbsa_code, description: "{{ doc('cbsa_code') }}", data_tests: [not_null]}
+      - &month {name: month, description: "{{ doc('month') }}", data_tests: [not_null]}
+      - &zhvi_usd {name: zhvi_usd, description: "{{ doc('zhvi_usd') }}"}
+
+  - name: fct_rents
+    description: Zillow ZORI for the study metros and their ZIPs, one row per place and month.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *cbsa_code
+      - *month
+      - &zori_usd {name: zori_usd, description: "{{ doc('zori_usd') }}"}
+
+  - name: fct_market_activity
+    description: >
+      Redfin market activity for the study metros and their ZIPs, one row per place and month. Divisions are
+      combined for Dallas-Fort Worth and Seattle (see is_division_blend).
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *cbsa_code
+      - *month
+      - &homes_sold {name: homes_sold, description: "{{ doc('homes_sold') }}"}
+      - &pending_sales {name: pending_sales, description: "{{ doc('pending_sales') }}"}
+      - &new_listings {name: new_listings, description: "{{ doc('new_listings') }}"}
+      - &active_listings {name: active_listings, description: "{{ doc('active_listings') }}"}
+      - &inventory {name: inventory, description: "{{ doc('inventory') }}"}
+      - &median_days_on_market {name: median_days_on_market, description: "{{ doc('median_days_on_market') }}"}
+      - &median_sale_price_usd {name: median_sale_price_usd, description: "{{ doc('median_sale_price_usd') }}"}
+      - &median_sale_ppsf_usd {name: median_sale_ppsf_usd, description: "{{ doc('median_sale_ppsf_usd') }}"}
+      - &median_list_price_usd {name: median_list_price_usd, description: "{{ doc('median_list_price_usd') }}"}
+      - &median_list_ppsf_usd {name: median_list_ppsf_usd, description: "{{ doc('median_list_ppsf_usd') }}"}
+      - &sale_to_list_pct {name: sale_to_list_pct, description: "{{ doc('sale_to_list_pct') }}"}
+      - &sold_above_list_pct {name: sold_above_list_pct, description: "{{ doc('sold_above_list_pct') }}"}
+      - &off_market_in_two_weeks_pct
+        {name: off_market_in_two_weeks_pct, description: "{{ doc('off_market_in_two_weeks_pct') }}"}
+      - &months_of_supply {name: months_of_supply, description: "{{ doc('months_of_supply') }}"}
+      - &is_division_blend {name: is_division_blend, description: "{{ doc('is_division_blend') }}"}
+
+  - name: fct_permits
+    description: >
+      Building permits per study county and month. April 2015 comes from the year-to-date files; county-years
+      missing from the pre-2022 monthly sample get their annual total spread evenly over 12 months.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "county_fips || month"
+    columns:
+      - name: county_fips
+        description: 5-char county FIPS.
+        data_tests: [not_null]
+      - *cbsa_code
+      - *month
+      - name: units_1
+        description: Units in single-family buildings.
+      - name: units_2
+        description: Units in two-unit buildings.
+      - name: units_3_4
+        description: Units in three- and four-unit buildings.
+      - name: units_5_plus
+        description: Units in buildings with five or more units.
+      - name: total_units
+        description: All units permitted.
+      - name: is_estimated
+        description: True when the row is a twelfth of the county's annual total, not a monthly report.
+
+  - name: fct_wages
+    description: >
+      QCEW all-industry, all-ownership employment and wages for the study metros and counties, one row per place
+      and month. Quarterly values repeat in each month of the quarter.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *cbsa_code
+      - *month
+      - name: quarter
+        description: "{{ doc('wages_quarter') }}"
+      - &employment {name: employment, description: "{{ doc('employment') }}"}
+      - name: establishments
+        description: Establishments in the quarter.
+      - name: total_wages_usd
+        description: Total wages paid in the quarter, in dollars.
+      - &avg_weekly_wage_usd {name: avg_weekly_wage_usd, description: "{{ doc('avg_weekly_wage_usd') }}"}
+      - name: disclosure_code
+        description: N when BLS suppresses the values (they are null).
+
+  - name: fct_migration
+    description: IRS county migration totals (US and foreign) for the study counties, one row per county and tax year.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "county_fips || tax_year"
+    columns:
+      - name: county_fips
+        description: 5-char county FIPS.
+        data_tests: [not_null]
+      - *cbsa_code
+      - name: tax_year
+        description: Later of the IRS file's two tax years.
+        data_tests: [not_null]
+      - name: inflow_returns
+        description: Returns (about households) moving in.
+      - name: outflow_returns
+        description: Returns moving out.
+      - name: inflow_people
+        description: People (exemptions) moving in.
+      - name: outflow_people
+        description: People moving out.
+      - name: inflow_agi_usd
+        description: Adjusted gross income moving in, in dollars.
+      - name: outflow_agi_usd
+        description: Adjusted gross income moving out, in dollars.
+      - name: net_people
+        description: inflow_people minus outflow_people.
+
+  - name: fct_income
+    description: >
+      ACS 5-year estimates for the study metros, their counties and their ZIPs (through the ZCTA with the same
+      code), one row per place and vintage.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "geo_level || geo_code || acs_vintage"
+    columns:
+      - *geo_level
+      - *geo_code
+      - *cbsa_code
+      - name: acs_vintage
+        description: Last year of the five-year period.
+        data_tests: [not_null]
+      - &median_household_income_usd
+        {name: median_household_income_usd, description: "{{ doc('median_household_income_usd') }}"}
+      - &population {name: population, description: "{{ doc('population') }}"}
+      - &median_gross_rent_usd {name: median_gross_rent_usd, description: "{{ doc('median_gross_rent_usd') }}"}
+      - &rent_pct_income {name: rent_pct_income, description: "{{ doc('rent_pct_income') }}"}
+
+  - name: fct_economy
+    description: >
+      FRED series by month: metro unemployment rates (cbsa_code set) and national series (cbsa_code null).
+      Weekly series are averaged over the month.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "series_id || month"
+    columns:
+      - name: series_id
+        description: FRED series id.
+        data_tests: [not_null]
+      - name: cbsa_code
+        description: Study metro of a metro unemployment series; null for national series.
+      - *month
+      - name: value
+        description: Monthly value (average of the month's observations).
+
+  - name: fct_fair_market_rents
+    description: >
+      HUD Fair Market Rents for the study metros' FMR areas, one row per area and fiscal year, plus one row per
+      ZIP for Small Area FMR areas.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "fmr_area_code || fiscal_year || coalesce(zip, '')"
+    columns:
+      - name: fmr_area_code
+        description: HUD FMR area code.
+        data_tests: [not_null]
+      - name: cbsa_code
+        description: CBSA code inside fmr_area_code.
+      - name: area_name
+        description: HUD's area name.
+      - name: zip
+        description: ZIP for Small Area FMR rows, null for the area-wide row.
+      - name: fiscal_year
+        description: HUD fiscal year; year N runs from October N-1 to September N.
+      - name: is_small_area
+        description: True when HUD publishes ZIP-level FMRs for the area.
+      - name: fmr_0br_usd
+        description: Efficiency FMR, dollars per month.
+      - name: fmr_1br_usd
+        description: One-bedroom FMR.
+      - name: fmr_2br_usd
+        description: Two-bedroom FMR.
+      - name: fmr_3br_usd
+        description: Three-bedroom FMR.
+      - name: fmr_4br_usd
+        description: Four-bedroom FMR.
+
+  - name: mart_metro_month
+    description: One row per study metro and month (January 2015 to the latest Zillow month), with derived metrics.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "cbsa_code || month"
+    columns: &mart_columns
+      - *cbsa_code
+      - *month
+      - *zhvi_usd
+      - *median_sale_price_usd
+      - *median_sale_ppsf_usd
+      - *median_list_price_usd
+      - *median_list_ppsf_usd
+      - *is_division_blend
+      - *zori_usd
+      - {name: fmr_2br_usd, description: "{{ doc('fmr_2br_usd') }}"}
+      - {name: fmr_fiscal_year, description: "{{ doc('fmr_fiscal_year') }}"}
+      - {name: fmr_is_carried_forward, description: "{{ doc('fmr_is_carried_forward') }}"}
+      - *homes_sold
+      - *pending_sales
+      - *new_listings
+      - *active_listings
+      - *inventory
+      - *months_of_supply
+      - *median_days_on_market
+      - *sale_to_list_pct
+      - *sold_above_list_pct
+      - *off_market_in_two_weeks_pct
+      - {name: permit_units, description: "{{ doc('permit_units') }}"}
+      - {name: permits_per_1000, description: "{{ doc('permits_per_1000') }}"}
+      - *employment
+      - *avg_weekly_wage_usd
+      - {name: wages_quarter, description: "{{ doc('wages_quarter') }}"}
+      - {name: wages_is_carried_forward, description: "{{ doc('wages_is_carried_forward') }}"}
+      - {name: unemployment_rate_pct, description: "{{ doc('unemployment_rate_pct') }}"}
+      - {name: net_migration_people, description: "{{ doc('net_migration_people') }}"}
+      - {name: net_migration_rate, description: "{{ doc('net_migration_rate') }}"}
+      - {name: migration_tax_year, description: "{{ doc('migration_tax_year') }}"}
+      - {name: migration_is_carried_forward, description: "{{ doc('migration_is_carried_forward') }}"}
+      - *median_household_income_usd
+      - *population
+      - *median_gross_rent_usd
+      - *rent_pct_income
+      - {name: income_acs_vintage, description: "{{ doc('income_acs_vintage') }}"}
+      - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}
+      - {name: mortgage_rate_pct, description: "{{ doc('mortgage_rate_pct') }}"}
+      - {name: cpi, description: "{{ doc('cpi') }}"}
+      - {name: price_to_income, description: "{{ doc('price_to_income') }}"}
+      - {name: rent_to_wage, description: "{{ doc('rent_to_wage') }}"}
+      - {name: zhvi_yoy_growth, description: "{{ doc('zhvi_yoy_growth') }}"}
+      - {name: zori_yoy_growth, description: "{{ doc('zori_yoy_growth') }}"}
+      - {name: avg_weekly_wage_yoy_growth, description: "{{ doc('avg_weekly_wage_yoy_growth') }}"}
+      - {name: employment_yoy_growth, description: "{{ doc('employment_yoy_growth') }}"}
+
+  - name: mart_zip_month
+    description: >
+      One row per study ZIP with residential addresses and month, with its metro in cbsa_code: the columns of
+      mart_metro_month plus zip. County data reaches ZIPs as res_ratio-weighted averages of county rates, so ZIP
+      rows have no permit_units, employment or net_migration_people.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "zip || month"
+      - not_null:
+          arguments:
+            column_name: zip
+      - relationships:
+          arguments:
+            column_name: zip
+            to: ref('dim_zip')
+            field: zip
+    # zip is the only column mart_metro_month lacks; it is described above and tested at model level
+    columns: *mart_columns

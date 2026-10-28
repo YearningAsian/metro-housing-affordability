@@ -3,6 +3,8 @@ import yaml
 
 
 def model(dbt, session):
+    # Python models cannot be views, the staging default
+    dbt.config(materialized="table")
     # config/metros.yml stays the one place to add a metro; dbt runs from the repo root
     with open("config/metros.yml", encoding="utf-8") as f:
         metros = pd.DataFrame(yaml.safe_load(f)["metros"])

@@ -1,8 +1,13 @@
 [sqlfluff]
 dialect = duckdb
-# shortcut: jinja templater can't resolve ref()/source() without a dbt project; switch to templater = dbt in Phase 6
+# jinja templater stubs ref()/source(); the project macros are loaded below so models that call them parse
 templater = jinja
 max_line_length = 120
+# RF04: month, year, quarter and value are the warehouse's column names; ST06: columns keep keys-then-measures order
+exclude_rules = RF04, ST06
 
 [sqlfluff:indentation]
 tab_space_size = 4
+
+[sqlfluff:templater:jinja]
+load_macros_from_path = dbt/macros

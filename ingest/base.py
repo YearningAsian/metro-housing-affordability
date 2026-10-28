@@ -180,6 +180,8 @@ def run(extractors, data=DATA, today=None):
 
 def register_views(con, data):
     """Create the layer schemas and expose each bronze entity as bronze.<source>__<entity>, over every load."""
+    # rebuild bronze from scratch so a removed entity leaves no stale view; DuckDB views bind late, so silver survives
+    con.execute("drop schema if exists bronze cascade")
     for schema in ("bronze", "silver", "gold", "ml"):
         con.execute(f"create schema if not exists {schema}")
     for d in sorted((data / "bronze").glob("*/*")):

@@ -1,0 +1,290 @@
+version: 2
+
+# Staging: one view per source over bronze (one table for the Python model), typed and renamed, newest load only.
+models:
+  - name: stg_config__metros
+    description: The study metros from config/metros.yml.
+    columns:
+      - name: cbsa_code
+        description: 5-digit CBSA code (July 2023 delineation).
+        data_tests: [unique, not_null]
+      - name: name
+        description: Short metro name, e.g. Nashville, TN.
+      - name: role
+        description: core (the four metros the project studies) or comparison.
+      - name: zillow_region_id
+        description: Zillow metro RegionID.
+      - name: redfin_table_ids
+        description: Redfin metro region ids, as text (CBSA, or metro division codes).
+      - name: fred_unemployment_series
+        description: FRED series id of the metro's unemployment rate.
+      - name: hud_fmr_areas
+        description: HUD FMR area codes in the metro; the first is the core area.
+
+  - name: stg_zillow__indexes
+    description: Zillow ZHVI and ZORI for metros and ZIPs, unpivoted to one row per region, measure and month.
+    columns:
+      - name: geo_level
+        description: metro or zip.
+      - name: measure
+        description: zhvi (home values) or zori (rents).
+      - name: region_id
+        description: Zillow RegionID.
+      - name: zip
+        description: 5-char ZIP for ZIP rows, else null.
+      - name: month
+        description: First day of the month (Zillow dates it by the last day).
+      - name: value
+        description: Index value in dollars (rent per month for zori).
+
+  - name: stg_redfin__market_tracker
+    description: >
+      Redfin housing market data, all residential, not seasonally adjusted. Metro rows are calendar months; ZIP rows
+      are rolling three-month windows dated by their last month. Monthly files replace the weekly ones the plan
+      first named, so no weekly roll-up is needed.
+    columns:
+      - name: geo_level
+        description: metro or zip.
+      - name: region_id
+        description: Metro rows, the CBSA or metro division code; ZIP rows, Redfin's internal region id.
+      - name: zip
+        description: 5-char ZIP for ZIP rows, else null.
+      - name: zip_metro_name
+        description: Redfin's metro name for ZIP rows.
+      - name: period_begin
+        description: First day of the period.
+      - name: period_end
+        description: Last day of the period.
+      - name: month
+        description: Month the row describes.
+      - name: homes_sold
+        description: "{{ doc('homes_sold') }}"
+      - name: pending_sales
+        description: "{{ doc('pending_sales') }}"
+      - name: new_listings
+        description: "{{ doc('new_listings') }}"
+      - name: active_listings
+        description: "{{ doc('active_listings') }}"
+      - name: inventory
+        description: "{{ doc('inventory') }}"
+      - name: months_of_supply
+        description: "{{ doc('months_of_supply') }}"
+      - name: median_days_on_market
+        description: "{{ doc('median_days_on_market') }}"
+      - name: median_sale_price_usd
+        description: "{{ doc('median_sale_price_usd') }}"
+      - name: median_sale_ppsf_usd
+        description: "{{ doc('median_sale_ppsf_usd') }}"
+      - name: median_list_price_usd
+        description: "{{ doc('median_list_price_usd') }}"
+      - name: median_list_ppsf_usd
+        description: "{{ doc('median_list_ppsf_usd') }}"
+      - name: sale_to_list_pct
+        description: "{{ doc('sale_to_list_pct') }}"
+      - name: sold_above_list_pct
+        description: "{{ doc('sold_above_list_pct') }}"
+      - name: off_market_in_two_weeks_pct
+        description: "{{ doc('off_market_in_two_weeks_pct') }}"
+      - name: last_updated
+        description: Date Redfin last updated the row.
+
+  - name: stg_bps__permits
+    description: Census building permits by county, from the monthly, 2015 year-to-date and annual files.
+    columns:
+      - name: file_type
+        description: monthly, ytd or annual.
+      - name: county_fips
+        description: 5-char county FIPS.
+      - name: survey_date
+        description: YYYYMM, or YYYY for annual files.
+      - name: period_start
+        description: First day of the month or year the row covers (a ytd row covers January to that month).
+      - name: units_1
+        description: Units in single-family buildings.
+      - name: units_2
+        description: Units in two-unit buildings.
+      - name: units_3_4
+        description: Units in three- and four-unit buildings.
+      - name: units_5_plus
+        description: Units in buildings with five or more units.
+      - name: buildings
+        description: Buildings permitted, all sizes.
+      - name: value_usd
+        description: Construction value permitted, in dollars.
+
+  - name: stg_acs__estimates
+    description: ACS 5-year estimates by ZCTA, county and CBSA. Negative Census sentinels become null.
+    columns:
+      - name: geo_level
+        description: zcta, county or metro (any CBSA).
+      - name: geo_code
+        description: ZCTA, 5-char county FIPS or CBSA code.
+      - name: acs_vintage
+        description: Last year of the five-year period.
+      - name: median_household_income_usd
+        description: "{{ doc('median_household_income_usd') }}"
+      - name: population
+        description: "{{ doc('population') }}"
+      - name: median_gross_rent_usd
+        description: "{{ doc('median_gross_rent_usd') }}"
+      - name: rent_pct_income
+        description: "{{ doc('rent_pct_income') }}"
+
+  - name: stg_qcew__industry_10
+    description: BLS QCEW all-industry totals by area, ownership and quarter. Suppressed cells (disclosure N) are null.
+    columns:
+      - name: area_fips
+        description: QCEW area code; 5-digit county FIPS, or C + four CBSA digits for MSAs.
+      - name: own_code
+        description: Ownership; 0 = all owners.
+      - name: agglvl_code
+        description: Aggregation level; 70 = county total, 40 = MSA total.
+      - name: year
+        description: Calendar year.
+      - name: quarter_of_year
+        description: Quarter, 1-4.
+      - name: quarter_start
+        description: First day of the quarter.
+      - name: disclosure_code
+        description: N when BLS suppresses the values.
+      - name: establishments
+        description: Establishments in the quarter.
+      - name: employment_month_1
+        description: Employment in the quarter's first month.
+      - name: employment_month_2
+        description: Employment in the quarter's second month.
+      - name: employment_month_3
+        description: Employment in the quarter's third month.
+      - name: total_wages_usd
+        description: Total wages paid in the quarter, in dollars.
+      - name: avg_weekly_wage_usd
+        description: Average weekly wage, in dollars.
+
+  - name: stg_fred__observations
+    description: FRED observations, one row per series and date. FRED's '.' gaps become null.
+    columns:
+      - name: series_id
+        description: FRED series id.
+      - name: observation_date
+        description: Observation date (first day of the period for monthly series).
+      - name: value
+        description: Observed value.
+
+  - name: stg_irs_migration__flows
+    description: >
+      IRS SOI county migration, inflows and outflows in one shape. county_fips is the county the file is about;
+      other_* is the origin (inflow) or destination (outflow). other_state_fips 96 rows are the county's totals.
+    columns:
+      - name: direction
+        description: inflow or outflow.
+      - name: county_fips
+        description: 5-char FIPS of the county the row is about.
+      - name: other_state_fips
+        description: 2-char state FIPS of the other end; 96-98 mark IRS summary rows.
+      - name: other_county_fips
+        description: 5-char FIPS of the other end.
+      - name: other_name
+        description: Name of the other end, or of the summary row.
+      - name: tax_year
+        description: Later of the file's two tax years (countyinflow2223.csv is 2023).
+      - name: returns
+        description: Tax returns that moved, about households. Null when suppressed.
+      - name: people
+        description: Exemptions on those returns, about people. Null when suppressed.
+      - name: agi_usd
+        description: Adjusted gross income on those returns, in dollars. Null when suppressed.
+
+  - name: stg_hud_fmr__fmr
+    description: >
+      HUD Fair Market Rents by FMR area and fiscal year. Small Area FMR areas add one row per ZIP next to their
+      area-wide row.
+    columns:
+      - name: fmr_area_code
+        description: HUD FMR area code, METRO + CBSA code + area suffix.
+      - name: cbsa_code
+        description: CBSA code inside fmr_area_code.
+      - name: area_name
+        description: HUD's area name.
+      - name: zip
+        description: ZIP for Small Area FMR rows, null for the area-wide row.
+      - name: fiscal_year
+        description: HUD fiscal year; year N runs from October N-1 to September N.
+      - name: is_small_area
+        description: True when HUD publishes ZIP-level (Small Area) FMRs for the area.
+      - name: fmr_0br_usd
+        description: Efficiency FMR, dollars per month.
+      - name: fmr_1br_usd
+        description: One-bedroom FMR.
+      - name: fmr_2br_usd
+        description: Two-bedroom FMR.
+      - name: fmr_3br_usd
+        description: Three-bedroom FMR.
+      - name: fmr_4br_usd
+        description: Four-bedroom FMR.
+
+  - name: stg_hud_crosswalk__zip_county
+    description: >
+      HUD-USPS ZIP-to-county crosswalk, one row per (ZIP, county). The ratios are shares of the ZIP's addresses
+      in that county; res_ratio weights county values when they reach ZIPs.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "zip || county_fips"
+    columns:
+      - name: zip
+        description: USPS ZIP code, 5-char text.
+        data_tests: [not_null]
+      - name: county_fips
+        description: 5-char county FIPS (state + county).
+        data_tests: [not_null]
+      - name: crosswalk_year
+        description: Year of the crosswalk release.
+      - name: crosswalk_quarter
+        description: Quarter of the crosswalk release.
+      - name: res_ratio
+        description: Share (0-1) of the ZIP's residential addresses in this county. Sums to 1 per ZIP, or 0 if none.
+      - name: bus_ratio
+        description: Share (0-1) of the ZIP's business addresses in this county.
+      - name: oth_ratio
+        description: Share (0-1) of the ZIP's other addresses in this county.
+      - name: tot_ratio
+        description: Share (0-1) of all the ZIP's addresses in this county.
+
+  - name: stg_census_geo__cbsa_delineation
+    description: Census CBSA delineation (July 2023), one row per county in a CBSA.
+    columns:
+      - name: cbsa_code
+        description: 5-digit CBSA code.
+      - name: cbsa_title
+        description: CBSA title.
+      - name: metro_division_code
+        description: Metro division code; null for CBSAs without divisions.
+      - name: metro_division_title
+        description: Metro division title.
+      - name: csa_code
+        description: Combined statistical area code.
+      - name: county_fips
+        description: 5-char county FIPS.
+        data_tests: [unique, not_null]
+      - name: is_metropolitan
+        description: True for metropolitan (not micropolitan) areas.
+      - name: is_central_county
+        description: True for central (not outlying) counties.
+
+  - name: stg_census_geo__county_shapes
+    description: Census cartographic boundary counties (2024), attributes only.
+    columns:
+      - name: county_fips
+        description: 5-char county FIPS.
+      - name: state_fips
+        description: 2-char state FIPS.
+      - name: state_code
+        description: Two-letter state abbreviation.
+      - name: county_name
+        description: County name with its legal suffix.
+
+  - name: stg_census_geo__zcta_shapes
+    description: Census cartographic boundary ZCTAs (2020), codes only.
+    columns:
+      - name: zcta
+        description: 5-char ZCTA code.

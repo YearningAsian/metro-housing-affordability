@@ -140,7 +140,9 @@ Files from `https://www2.census.gov/econ/bps/`:
 
 `c` is the current-month file; `y` is year to date and `a` (`County/coYYYYa.txt`) the annual total with late corrections. **Ingestion loads county files only**: monthly `c` files from 2015-01 (`county_monthly`) and annual `a` files from 2015 (`county_annual`, same layout, `survey_date` = `YYYY`). County rows sum to 2023 CBSAs through `dim_county`, which keeps one delineation for every year and avoids the CBSA files' thousands unit and their delineation change in January 2024. Monthly files are not revised after release; use the annual files to check or benchmark yearly sums. Layout reference: [cbsaasc.pdf](https://www2.census.gov/econ/bps/Documentation/cbsaasc.pdf); the county layout is in the same [Documentation](https://www2.census.gov/econ/bps/Documentation/) folder.
 
-**April 2015 gap.** Census's firewall always answers `County/co1504c.txt` with an HTML "Request Rejected" page at HTTP 200, so ingestion skips that file. It loads the year-to-date files `co1503y.txt` and `co1504y.txt` instead (`county_ytd`); staging derives April 2015 as `co1504y` minus `co1503y`. Two historical `failed` rows for `co1504c.txt` remain in `_load_log`.
+**April 2015 gap.** Census's firewall always answers `County/co1504c.txt` with an HTML "Request Rejected" page at HTTP 200, so ingestion skips that file. It loads the year-to-date files `co1503y.txt` and `co1504y.txt` instead (`county_ytd`); `fct_permits` derives April 2015 as `co1504y` minus `co1503y`. The year-to-date files hold the same county sample as the 2015 monthly files (77 of the 96 study counties); the other 19 get the annual spread below. Two historical `failed` rows for `co1504c.txt` remain in `_load_log`.
+
+**Pre-2022 monthly files are a sample.** Before 2022 the monthly county files hold only about 740 counties. 19 of the 96 study counties (including Tarrant and Denton, TX) have no monthly rows for 2015-2021. For a county-year with no monthly rows, `fct_permits` spreads the annual total evenly over its 12 months and sets `is_estimated = true`.
 
 **Format.** Comma-separated, latin-1, two header rows plus a blank line (skip 3 lines and name the columns). Names are space-padded, with a double space before the state (`Raleigh-Cary  NC`).
 
@@ -312,19 +314,19 @@ Shapefiles from `https://www2.census.gov/geo/tiger/GENZ{year}/shp/`: `cb_2024_us
 
 ## Geography backbone
 
-dbt models in `dbt/models/geography/`, built with `.\tasks.ps1 build` into `data/warehouse.duckdb`. They read the Phase 2 samples for now; Phase 6 points them at bronze.
+dbt models in `dbt/models/staging/` and `dbt/models/marts/`, built from bronze with `.\tasks.ps1 build` into `data/warehouse.duckdb`. Layers and naming are in [`warehouse_design.md`](warehouse_design.md).
 
 | Model | Grain | Rows | Built from |
 | --- | --- | --- | --- |
 | `dim_metro` | one row per study metro (`cbsa_code`) | 11 | `config/metros.yml` + delineation |
 | `dim_county` | one row per US county (`county_fips`) | 3,235 (1,915 in a CBSA, 96 in study metros) | 2024 county boundaries + delineation |
 | `dim_zip` | one row per ZIP in a study metro (`zip`) | 2,140 | HUD ZIP-to-county crosswalk + `dim_county` + 2020 ZCTAs |
-| `stg_hud__zip_county` | one row per (ZIP, county) | 54,570 | HUD ZIP-to-county crosswalk |
+| `stg_hud_crosswalk__zip_county` | one row per (ZIP, county) | 54,570 | HUD ZIP-to-county crosswalk |
 
 **Rule for ZIPs split across counties.** Two rules, for two jobs:
 
 - *Membership.* A ZIP belongs to the county with the largest share of its residential addresses (`res_ratio`); total addresses break ties and decide for ZIPs with no residential addresses. Its metro is that county's 2023 CBSA. This gives each ZIP exactly one county and one metro.
-- *Allocation.* County-level values (wages, permits, migration) reach ZIPs weighted by `res_ratio` from `stg_hud__zip_county`, so a ZIP split 60/40 gets 60% and 40% of its two counties' values.
+- *Allocation.* County-level rates and averages (permits per 1,000, net migration rate, average weekly wage) reach a ZIP as the average of its counties' values weighted by `res_ratio` from `stg_hud_crosswalk__zip_county`, so a ZIP split 60/40 gets 0.6 × one county's rate plus 0.4 × the other's. Counts (permit units, employment, net migrants) are not split and stay null at ZIP grain.
 
 Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, counties and metros form one hierarchy. The two routes disagree on 5 of 39,472 ZIPs, none in a study metro; the test `assert_dim_zip_matches_hud_cbsa` warns if that changes.
 
@@ -341,11 +343,11 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 | --- | --- | --- |
 | Zillow ZHVI, ZORI | metro file, `RegionID` = `dim_metro.zillow_region_id` | ZIP file, `RegionName` = `dim_zip.zip` |
 | Redfin | `REGION ID` in `dim_metro.redfin_table_ids`, monthly rows; split metros need the Phase 5 rule | ZIP from `REGION NAME`, rolling three-month window keyed on its `PERIOD END` month |
-| Census BPS | county file summed by `dim_county.cbsa_code` | county file, allocated by `res_ratio` |
+| Census BPS | county file summed by `dim_county.cbsa_code` | permits per 1,000 weighted by `res_ratio` |
 | ACS 5-year | CBSA geography, carried forward to each month of the release year | ZCTA via `dim_zip.zcta`, carried forward |
-| QCEW | `area_fips` = `dim_metro.qcew_area_fips`; monthly employment per month, wages per quarter carried forward | county rows, allocated by `res_ratio` |
+| QCEW | `area_fips` = `dim_metro.qcew_area_fips`; monthly employment per month, wages per quarter carried forward | county average weekly wage weighted by `res_ratio` |
 | FRED | mortgage and CPI are national (weekly mortgage averaged to months); LAUS series per metro | metro value repeated for each ZIP in the metro |
-| IRS SOI migration | counties summed by `dim_county.cbsa_code`, annual, carried forward | county flows allocated by `res_ratio` |
+| IRS SOI migration | counties summed by `dim_county.cbsa_code`, annual, carried forward | county net migration rate weighted by `res_ratio` |
 | HUD FMR | FMR area per metro (`MSA level` row), annual | Small Area FMR ZIPs where the area uses them, else the metro value |
 | HUD crosswalk, delineation, boundaries | dimensions, not facts | dimensions, not facts |
 

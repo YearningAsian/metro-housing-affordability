@@ -22,6 +22,8 @@ select
     c.metro_division_codes,
     m.zillow_region_id::bigint as zillow_region_id,
     m.redfin_table_ids,
+    m.fred_unemployment_series,
+    m.hud_fmr_areas,
     -- QCEW names MSAs with C + the first four CBSA digits
     'C' || left(m.cbsa_code, 4) as qcew_area_fips
 from {{ ref('stg_config__metros') }} as m

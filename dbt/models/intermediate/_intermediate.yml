@@ -1,0 +1,102 @@
+version: 2
+
+# Every int_ model left-joins onto int_spine, so the unique test on its key also proves it has the spine's rows.
+models:
+  - name: int_spine
+    description: >
+      One row per study place and month, the grain of both marts: every metro, and every ZIP with residential
+      addresses, from January 2015 to the latest Zillow month.
+    data_tests: &place_month_key
+      - unique:
+          arguments:
+            column_name: "geo_level || geo_code || month"
+    columns:
+      - {name: geo_level, description: "{{ doc('geo_level') }}", data_tests: [not_null]}
+      - {name: geo_code, description: "{{ doc('geo_code') }}", data_tests: [not_null]}
+      - {name: cbsa_code, description: "{{ doc('cbsa_code') }}", data_tests: [not_null]}
+      - {name: month, description: "{{ doc('month') }}", data_tests: [not_null]}
+
+  - name: int_prices
+    description: Home prices per place and month, from Zillow and Redfin.
+    data_tests: *place_month_key
+    columns:
+      - &geo_level {name: geo_level, description: "{{ doc('geo_level') }}"}
+      - &geo_code {name: geo_code, description: "{{ doc('geo_code') }}"}
+      - &month {name: month, description: "{{ doc('month') }}"}
+      - {name: zhvi_usd, description: "{{ doc('zhvi_usd') }}"}
+      - {name: median_sale_price_usd, description: "{{ doc('median_sale_price_usd') }}"}
+      - {name: median_sale_ppsf_usd, description: "{{ doc('median_sale_ppsf_usd') }}"}
+      - {name: median_list_price_usd, description: "{{ doc('median_list_price_usd') }}"}
+      - {name: median_list_ppsf_usd, description: "{{ doc('median_list_ppsf_usd') }}"}
+      - {name: is_division_blend, description: "{{ doc('is_division_blend') }}"}
+
+  - name: int_rents
+    description: Rents per place and month, from Zillow and HUD Fair Market Rents.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *month
+      - {name: zori_usd, description: "{{ doc('zori_usd') }}"}
+      - {name: fmr_2br_usd, description: "{{ doc('fmr_2br_usd') }}"}
+      - {name: fmr_fiscal_year, description: "{{ doc('fmr_fiscal_year') }}"}
+      - {name: fmr_is_carried_forward, description: "{{ doc('fmr_is_carried_forward') }}"}
+
+  - name: int_supply
+    description: Supply per place and month, from Redfin listings and Census building permits.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *month
+      - {name: homes_sold, description: "{{ doc('homes_sold') }}"}
+      - {name: pending_sales, description: "{{ doc('pending_sales') }}"}
+      - {name: new_listings, description: "{{ doc('new_listings') }}"}
+      - {name: active_listings, description: "{{ doc('active_listings') }}"}
+      - {name: inventory, description: "{{ doc('inventory') }}"}
+      - {name: months_of_supply, description: "{{ doc('months_of_supply') }}"}
+      - {name: median_days_on_market, description: "{{ doc('median_days_on_market') }}"}
+      - {name: sale_to_list_pct, description: "{{ doc('sale_to_list_pct') }}"}
+      - {name: sold_above_list_pct, description: "{{ doc('sold_above_list_pct') }}"}
+      - {name: off_market_in_two_weeks_pct, description: "{{ doc('off_market_in_two_weeks_pct') }}"}
+      - {name: permit_units, description: "{{ doc('permit_units') }}"}
+      - {name: permits_per_1000, description: "{{ doc('permits_per_1000') }}"}
+
+  - name: int_wages
+    description: Employment, wages and unemployment per place and month, from QCEW and BLS LAUS (via FRED).
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *month
+      - {name: employment, description: "{{ doc('employment') }}"}
+      - {name: avg_weekly_wage_usd, description: "{{ doc('avg_weekly_wage_usd') }}"}
+      - {name: wages_quarter, description: "{{ doc('wages_quarter') }}"}
+      - {name: wages_is_carried_forward, description: "{{ doc('wages_is_carried_forward') }}"}
+      - {name: unemployment_rate_pct, description: "{{ doc('unemployment_rate_pct') }}"}
+
+  - name: int_migration
+    description: Net migration per place and month, from the IRS county flows.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *month
+      - {name: net_migration_people, description: "{{ doc('net_migration_people') }}"}
+      - {name: net_migration_rate, description: "{{ doc('net_migration_rate') }}"}
+      - {name: migration_tax_year, description: "{{ doc('migration_tax_year') }}"}
+      - {name: migration_is_carried_forward, description: "{{ doc('migration_is_carried_forward') }}"}
+
+  - name: int_income
+    description: Income, population and rent burden per place and month, from the ACS 5-year estimates.
+    data_tests: *place_month_key
+    columns:
+      - *geo_level
+      - *geo_code
+      - *month
+      - {name: median_household_income_usd, description: "{{ doc('median_household_income_usd') }}"}
+      - {name: population, description: "{{ doc('population') }}"}
+      - {name: median_gross_rent_usd, description: "{{ doc('median_gross_rent_usd') }}"}
+      - {name: rent_pct_income, description: "{{ doc('rent_pct_income') }}"}
+      - {name: income_acs_vintage, description: "{{ doc('income_acs_vintage') }}"}
+      - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}

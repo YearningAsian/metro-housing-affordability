@@ -1,6 +1,6 @@
 -- ZIPs in the study metros. A ZIP split across counties belongs to the county holding the largest share of its
 -- residential addresses (total addresses break ties and decide for ZIPs with none). County-level values are
--- allocated to ZIPs by res_ratio from stg_hud__zip_county instead, so this rule only sets metro membership.
+-- allocated to ZIPs by res_ratio from stg_hud_crosswalk__zip_county instead, so this rule only sets metro membership.
 with ranked as (
     select
         zip,
@@ -9,11 +9,7 @@ with ranked as (
         count(*) over (partition by zip) as county_count,
         sum(res_ratio) over (partition by zip) as res_ratio_total,
         row_number() over (partition by zip order by res_ratio desc, tot_ratio desc, county_fips asc) as rn
-    from {{ ref('stg_hud__zip_county') }}
-),
-
-zctas as (
-    select geoid20 as zcta from {{ source('samples', 'zcta_shapes') }}
+    from {{ ref('stg_hud_crosswalk__zip_county') }}
 )
 
 select
@@ -30,5 +26,5 @@ select
     r.res_ratio_total = 0 as is_po_box_only
 from ranked as r
 inner join {{ ref('dim_county') }} as c on r.county_fips = c.county_fips
-left join zctas as z on r.zip = z.zcta
+left join {{ ref('stg_census_geo__zcta_shapes') }} as z on r.zip = z.zcta
 where r.rn = 1 and c.is_study_metro

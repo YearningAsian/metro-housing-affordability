@@ -4,8 +4,16 @@ profile: metro_housing
 config-version: 2
 
 model-paths: ["models"]
+macro-paths: ["macros"]
 test-paths: ["tests"]
 
 models:
   metro_housing:
     +materialized: table
+    staging:
+      +schema: silver
+      +materialized: view
+    intermediate:
+      +schema: silver
+    marts:
+      +schema: gold
