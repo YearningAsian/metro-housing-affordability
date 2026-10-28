@@ -147,12 +147,12 @@ Know every file's columns, grain, gaps and quirks before writing any pipeline.
 
 Build one set of tables that maps ZIP to county to metro, so every source can join.
 
-- [ ] Load the CBSA delineation file into `dim_county` (county FIPS, name, CBSA code, metro name)
-- [ ] Load the HUD-USPS ZIP-to-county and ZIP-to-CBSA crosswalks, keeping the residential ratio
-- [ ] Pick a rule for ZIPs split across counties: largest residential share, or weighted allocation
-- [ ] Build `dim_zip` and `dim_metro`, filtered to the 11 metros
-- [ ] Map ZIPs to ZCTAs for ACS joins and map shapes; flag PO-box-only ZIPs, which never appear in HUD files
-- [ ] Verify the CBSA codes in `metros.yml`
+- [x] Load the CBSA delineation file into `dim_county` (county FIPS, name, CBSA code, metro name)
+- [x] Load the HUD-USPS ZIP-to-county and ZIP-to-CBSA crosswalks, keeping the residential ratio
+- [x] Pick a rule for ZIPs split across counties: largest residential share, or weighted allocation
+- [x] Build `dim_zip` and `dim_metro`, filtered to the 11 metros
+- [x] Map ZIPs to ZCTAs for ACS joins and map shapes; flag PO-box-only ZIPs, which never appear in HUD files
+- [x] Verify the CBSA codes in `metros.yml`
 
 **Deliverable:** `dim_metro`, `dim_county`, `dim_zip`. **Done when:** every Zillow ZIP in the 11 metros maps to exactly one metro.
 

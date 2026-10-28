@@ -35,7 +35,7 @@ Snapshot date: **2026-10-27**. Lags and latest periods are as observed on that d
 
 ## Study metros across sources
 
-Each source names the 11 metros differently. Phase 3 turns this table into `dim_metro`.
+Each source names the 11 metros differently. The Zillow and Redfin keys live in `config/metros.yml`, and `dim_metro` carries all of them (see [Geography backbone](#geography-backbone)).
 
 | Metro | CBSA (2023) | Zillow metro `RegionID` | Redfin `TABLE_ID` | QCEW `area_fips` | Metro divisions (2023) |
 | --- | --- | --- | --- | --- | --- |
@@ -307,6 +307,45 @@ Shapefiles from `https://www2.census.gov/geo/tiger/GENZ{year}/shp/`: `cb_2024_us
 | `ALAND`, `AWATER` | BIGINT | square metres | Land and water area. |
 | `geom` | GEOMETRY | polygon | Shape (simplified, 1:500,000). |
 
+## Geography backbone
+
+dbt models in `dbt/models/geography/`, built with `.\tasks.ps1 build` into `data/warehouse.duckdb`. They read the Phase 2 samples for now; Phase 6 points them at bronze.
+
+| Model | Grain | Rows | Built from |
+| --- | --- | --- | --- |
+| `dim_metro` | one row per study metro (`cbsa_code`) | 11 | `config/metros.yml` + delineation |
+| `dim_county` | one row per US county (`county_fips`) | 3,235 (1,915 in a CBSA, 96 in study metros) | 2024 county boundaries + delineation |
+| `dim_zip` | one row per ZIP in a study metro (`zip`) | 2,140 | HUD ZIP-to-county crosswalk + `dim_county` + 2020 ZCTAs |
+| `stg_hud__zip_county` | one row per (ZIP, county) | 54,570 | HUD ZIP-to-county crosswalk |
+
+**Rule for ZIPs split across counties.** Two rules, for two jobs:
+
+- *Membership.* A ZIP belongs to the county with the largest share of its residential addresses (`res_ratio`); total addresses break ties and decide for ZIPs with no residential addresses. Its metro is that county's 2023 CBSA. This gives each ZIP exactly one county and one metro.
+- *Allocation.* County-level values (wages, permits, migration) reach ZIPs weighted by `res_ratio` from `stg_hud__zip_county`, so a ZIP split 60/40 gets 60% and 40% of its two counties' values.
+
+Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, counties and metros form one hierarchy. The two routes disagree on 5 of 39,472 ZIPs, none in a study metro; the test `assert_dim_zip_matches_hud_cbsa` warns if that changes.
+
+**Checks (2026 Q2 crosswalk).**
+
+- Every Zillow ZIP in a study-metro county is in the crosswalk (`assert_zillow_zips_in_crosswalk`), and `dim_zip` is unique on `zip`, so each maps to exactly one metro. 1,438 Zillow ZIPs land in `dim_zip`.
+- 21 Zillow ZIPs that Zillow's pre-2023 metro titles place in a study metro fall outside `dim_zip`. 9 are split ZIPs whose main county lies outside the metro (e.g. 30517 and 30548, filed by Zillow under Barrow County, GA, have most residents in Jackson County). The other 12 sit in counties outside the 2023 metro. The 2023 delineation wins.
+- ZIP to ZCTA: a ZIP uses the ZCTA with the same code. 588 of the 2,140 `dim_zip` ZIPs have no 2020 ZCTA (122 of them have no residential addresses). Only 1 is a Zillow ZIP (98206), so the gap costs almost no price or rent data.
+- `is_po_box_only` marks 178 ZIPs with no residential addresses. They stay in `dim_zip` but carry no prices or rents.
+
+**How each source reaches the target grains (Gate A).**
+
+| Source | Metro-month | ZIP-month |
+| --- | --- | --- |
+| Zillow ZHVI, ZORI | metro file, `RegionID` = `dim_metro.zillow_region_id` | ZIP file, `RegionName` = `dim_zip.zip` |
+| Redfin | `TABLE_ID` in `dim_metro.redfin_table_ids`, monthly rows; split metros need the Phase 5 rule | ZIP parsed from `REGION`, 90-day window keyed on its `PERIOD_END` month (metro-only measures missing) |
+| Census BPS | CBSA file, `cbsa_code` | county file, allocated by `res_ratio` |
+| ACS 5-year | CBSA geography, carried forward to each month of the release year | ZCTA via `dim_zip.zcta`, carried forward |
+| QCEW | `area_fips` = `dim_metro.qcew_area_fips`; monthly employment per month, wages per quarter carried forward | county rows, allocated by `res_ratio` |
+| FRED | mortgage and CPI are national (weekly mortgage averaged to months); LAUS series per metro | metro value repeated for each ZIP in the metro |
+| IRS SOI migration | counties summed by `dim_county.cbsa_code`, annual, carried forward | county flows allocated by `res_ratio` |
+| HUD FMR | FMR area per metro (`MSA level` row), annual | Small Area FMR ZIPs where the area uses them, else the metro value |
+| HUD crosswalk, delineation, boundaries | dimensions, not facts | dimensions, not facts |
+
 ## Open issues carried forward
 
 | Issue | Phase |
@@ -315,6 +354,4 @@ Shapefiles from `https://www2.census.gov/geo/tiger/GENZ{year}/shp/`: `cb_2024_us
 | Switch ZORI downloads to the SA files. | 4 |
 | Confirm the LAUS series IDs for the ten metros other than Nashville. | 4 |
 | Redfin Dallas-Fort Worth and Seattle are split into divisions; pick the metro rule. | 5 |
-| Rule for ZIPs split across counties (largest `res_ratio` or weighted). | 3 |
-| ZIP-to-ZCTA mapping for ACS joins. | 3 |
 | Redfin ZIP price outliers (999,999,999) need range tests. | 7 |

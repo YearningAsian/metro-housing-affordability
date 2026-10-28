@@ -13,5 +13,7 @@ switch ($Task) {
         if (-not (Test-Path .env)) { Copy-Item .env.example .env; Write-Host "Created .env from .env.example; add your API keys." }
     }
     "lint" { Invoke-Native uv run pre-commit run --all-files }
-    default { Write-Host "Tasks: setup, lint" }
+    # dbt resolves data/ and config/ paths from the repo root
+    "build" { Invoke-Native uv run dbt build --project-dir dbt --profiles-dir dbt }
+    default { Write-Host "Tasks: setup, lint, build" }
 }

@@ -17,6 +17,7 @@ __pycache__/
 .ruff_cache/
 
 # dbt
+dbt/.user.yml
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/

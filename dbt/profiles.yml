@@ -1,0 +1,8 @@
+# Paths are relative to the repo root: run dbt from there (.\tasks.ps1 build).
+metro_housing:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/warehouse.duckdb
+      extensions: [excel, spatial]

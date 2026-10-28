@@ -30,7 +30,7 @@ Everything is modeled at two grains, metro-month and ZIP-month, from January 201
 | Dallas-Fort Worth, TX | 19100 | Comparison |
 | Denver, CO | 19740 | Comparison |
 
-The list lives in [`config/metros.yml`](config/metros.yml).
+The list lives in [`config/metros.yml`](config/metros.yml). Build the geography tables with `.\tasks.ps1 build`.
 
 ## Data sources
 

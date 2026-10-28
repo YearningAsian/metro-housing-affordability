@@ -1,13 +1,15 @@
-# Study metros. CBSA codes from docs/PROJECT_PLAN.md; verify against the Census delineation file in Phase 3.
+# Study metros. CBSA codes follow the July 2023 Census delineation (checked by the dim_metro tests in Phase 3).
+# zillow_region_id: Zillow's metro RegionID (its metro files carry no CBSA code).
+# redfin_table_ids: Redfin metro keys; Dallas-Fort Worth and Seattle come split into metro divisions.
 metros:
-  - {cbsa_code: "34980", name: "Nashville, TN", role: core}
-  - {cbsa_code: "12060", name: "Atlanta, GA", role: core}
-  - {cbsa_code: "36740", name: "Orlando, FL", role: core}
-  - {cbsa_code: "42660", name: "Seattle, WA", role: core}  # high-cost contrast
-  - {cbsa_code: "12420", name: "Austin, TX", role: comparison}
-  - {cbsa_code: "38060", name: "Phoenix, AZ", role: comparison}
-  - {cbsa_code: "39580", name: "Raleigh, NC", role: comparison}
-  - {cbsa_code: "16740", name: "Charlotte, NC-SC", role: comparison}
-  - {cbsa_code: "45300", name: "Tampa, FL", role: comparison}
-  - {cbsa_code: "19100", name: "Dallas-Fort Worth, TX", role: comparison}
-  - {cbsa_code: "19740", name: "Denver, CO", role: comparison}
+  - {cbsa_code: "34980", name: "Nashville, TN", role: core, zillow_region_id: 394902, redfin_table_ids: [34980]}
+  - {cbsa_code: "12060", name: "Atlanta, GA", role: core, zillow_region_id: 394347, redfin_table_ids: [12060]}
+  - {cbsa_code: "36740", name: "Orlando, FL", role: core, zillow_region_id: 394943, redfin_table_ids: [36740]}
+  - {cbsa_code: "42660", name: "Seattle, WA", role: core, zillow_region_id: 395078, redfin_table_ids: [42644, 45104]}  # high-cost contrast
+  - {cbsa_code: "12420", name: "Austin, TX", role: comparison, zillow_region_id: 394355, redfin_table_ids: [12420]}
+  - {cbsa_code: "38060", name: "Phoenix, AZ", role: comparison, zillow_region_id: 394976, redfin_table_ids: [38060]}
+  - {cbsa_code: "39580", name: "Raleigh, NC", role: comparison, zillow_region_id: 395012, redfin_table_ids: [39580]}
+  - {cbsa_code: "16740", name: "Charlotte, NC-SC", role: comparison, zillow_region_id: 394458, redfin_table_ids: [16740]}
+  - {cbsa_code: "45300", name: "Tampa, FL", role: comparison, zillow_region_id: 395148, redfin_table_ids: [45300]}
+  - {cbsa_code: "19100", name: "Dallas-Fort Worth, TX", role: comparison, zillow_region_id: 394514, redfin_table_ids: [19124, 23104]}
+  - {cbsa_code: "19740", name: "Denver, CO", role: comparison, zillow_region_id: 394530, redfin_table_ids: [19740]}

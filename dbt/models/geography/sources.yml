@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: samples
+    # shortcut: reads the Phase 2 sample files directly; point these at bronze tables in Phase 6.
+    description: Phase 2 sample downloads under data/samples/ (see notebooks/download_samples.py).
+    tables:
+      - name: cbsa_delineation
+        description: Census CBSA delineation, July 2023. One row per county in a CBSA; footnote rows are dropped downstream.
+        meta:
+          external_location: "read_xlsx('data/samples/cbsa_delineation/list1_2023.xlsx', range = 'A3:L5000', all_varchar = true)"
+      - name: hud_zip_county
+        description: HUD-USPS ZIP-to-county crosswalk (API JSON, query=All).
+        meta:
+          external_location: "read_json('data/samples/hud_crosswalk/zip_county.json', maximum_object_size = 64000000)"
+      - name: hud_zip_cbsa
+        description: HUD-USPS ZIP-to-CBSA crosswalk (API JSON, query=All). Only used as a cross-check.
+        meta:
+          external_location: "read_json('data/samples/hud_crosswalk/zip_cbsa.json', maximum_object_size = 64000000)"
+      - name: county_shapes
+        description: Census cartographic boundary file, counties, 2024.
+        meta:
+          external_location: "st_read('/vsizip/data/samples/boundaries/cb_2024_us_county_500k.zip/cb_2024_us_county_500k.shp')"
+      - name: zcta_shapes
+        description: Census cartographic boundary file, ZCTAs, 2020 (the only ZCTA vintage).
+        meta:
+          external_location: "st_read('/vsizip/data/samples/boundaries/cb_2020_us_zcta520_500k.zip/cb_2020_us_zcta520_500k.shp')"
+      - name: zillow_zip_zhvi
+        description: Zillow ZIP-level ZHVI, wide (one column per month). Used to test ZIP coverage.
+        meta:
+          external_location: "read_csv('data/samples/zillow/zip_zhvi.csv', all_varchar = true)"
