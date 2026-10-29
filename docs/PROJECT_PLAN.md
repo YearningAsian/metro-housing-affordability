@@ -275,14 +275,14 @@ Part E adds three models that each have to beat a simple baseline on data they n
 
 ### Phase 11: Feature engineering (week 13)
 
-- [ ] Build `ml.features_zip_month` in dbt from the ZIP mart
-- [ ] Add lags: price and rent growth at 1, 3, 6 and 12 months; inventory, days on market and share of price drops; permits over the trailing 12 months
-- [ ] Add rolling stats: 12-month volatility and momentum (3-month vs. 12-month growth)
-- [ ] Add context: metro-wide growth, the ZIP's price relative to its metro median, the mortgage rate
-- [ ] Enforce point-in-time data: shift ACS and QCEW by their release lags so each row only sees what was published then
-- [ ] Define targets: 12-month-ahead price growth (regression) and a top-20%-in-its-metro flag (classification)
-- [ ] Split by time: train 2016–2022, validate 2023, test on predictions from 2024 onward whose outcome is already known
-- [ ] Write a test that fails if any feature date is later than its prediction date
+- [x] Build `ml.features_zip_month` in dbt from the ZIP mart
+- [x] Add lags: price and rent growth at 1, 3, 6 and 12 months; inventory, days on market and share of price drops (the Redfin download has none; sale-to-list ratio and share sold above list stand in); permits over the trailing 12 months
+- [x] Add rolling stats: 12-month volatility and momentum (3-month vs. 12-month growth)
+- [x] Add context: metro-wide growth, the ZIP's price relative to its metro median, the mortgage rate
+- [x] Enforce point-in-time data: shift ACS and QCEW by their release lags so each row only sees what was published then
+- [x] Define targets: 12-month-ahead price growth (regression) and a top-20%-in-its-metro flag (classification)
+- [x] Split by time: train 2016–2022, validate 2023, test on predictions from 2024 onward whose outcome is already known
+- [x] Write a test that fails if any feature date is later than its prediction date
 
 **Deliverable:** the feature table and splits. **Done when:** the leakage test passes.
 

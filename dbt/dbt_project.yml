@@ -17,3 +17,5 @@ models:
       +schema: silver
     marts:
       +schema: gold
+    ml:
+      +schema: ml

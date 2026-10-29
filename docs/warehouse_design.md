@@ -94,6 +94,26 @@ Before 2022 the BPS monthly county files cover only a sample of about 740 counti
 
 Every column is described in the schema YAML; descriptions shared by the int_ models and the marts live once in `dbt/models/_columns.md` as doc blocks. Run `.\tasks.ps1 docs` to browse them.
 
+### Features (ml)
+
+`ml.features_zip_month` has one row per ZIP and month t from January 2016 where the ZIP has a ZHVI (184,077 rows through September 2026). Its prediction is made on `prediction_date`, the 20th of the month after t, when the monthly pipeline runs. The marts apply each value from its reference period, so they look ahead: ACS vintage V counts from January of V, though it comes out in December of V+1. The feature table instead joins each source on its release date (ASOF, the latest release on or before `prediction_date`) and keeps that date in a `*_available_on` column:
+
+| Source | Released (conservative) | A prediction for month t sees |
+| --- | --- | --- |
+| Zillow ZHVI, ZORI (ZIP and metro) | the 15th of the next month | month t |
+| Redfin (ZIP rolling three months) | two months after the month starts | month t-1 |
+| BPS monthly permits | two months after the month starts | the 12 months to t-1 |
+| BPS annual totals (estimated months before 2022) | 1 June of the next year | up to 16 months back |
+| FRED mortgage rate | when the month ends | month t |
+| QCEW quarterly wages | nine months after the quarter starts | the quarter 8 to 10 months back |
+| ACS 5-year vintage V | 1 January of V+2; vintage 2020 on 1 April 2022 (the COVID delay to 17 March) | a vintage 1 to 3 years before t's year |
+
+Permits per 1,000 are recomputed from `fct_permits` with the ACS population published by the permit window's release. The `acs_available_on` macro holds the ACS rule for income and population. Because the first ACS vintage (2015) is published in 2017, `price_to_income` and `permits_per_1000` are null for about 14% of training rows (most of 2016).
+
+Targets: `target_growth_12m` is the ZHVI change from t to t+12; `target_top20` flags the top 20% of that growth within the metro and month. `split`, by t: train 2016–2022, validate 2023, test from 2024 while the target is known, score for the last 12 months.
+
+Known limits: Zillow and Redfin restate history, and only their latest release is kept, so past features are slightly cleaner than they were live. Training targets from 2022 run into 2023 and overlap the validation period. The Redfin download has no price-drop share, so `sale_to_list_pct` and `sold_above_list_pct` stand in.
+
 ## Every model
 
 | Layer | Models |

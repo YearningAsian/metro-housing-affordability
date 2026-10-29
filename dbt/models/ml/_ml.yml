@@ -1,0 +1,96 @@
+version: 2
+
+# ML: feature tables for the Phase 12-14 models, built point in time (see docs/warehouse_design.md).
+models:
+  - name: features_zip_month
+    description: >
+      One row per study ZIP and month t from January 2016 where the ZIP has a ZHVI: features as they could be known
+      on prediction_date, the 12-month-ahead targets and a time split. Each source joins on its release date
+      (the *_available_on columns), so a row sees only data published by prediction_date; the test
+      assert_features_point_in_time checks this. Zillow and Redfin values are their latest restatement, not the one
+      published at the time.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "zip || month"
+    columns:
+      - name: zip
+        description: 5-digit ZIP code.
+        data_tests: [not_null]
+      - name: cbsa_code
+        description: "{{ doc('cbsa_code') }}"
+        data_tests: [not_null]
+      - name: month
+        description: Month t the row describes; Zillow's value for t is the latest a prediction on prediction_date sees.
+        data_tests: [not_null]
+      - name: prediction_date
+        description: The day the prediction is made, the 20th of the month after t (the monthly pipeline run).
+        data_tests: [not_null]
+      - name: zhvi_usd
+        description: "{{ doc('zhvi_usd') }}"
+      - name: zhvi_growth_1m
+        description: ZHVI change over 1 month to t, as a fraction; zhvi_growth_3m, _6m and _12m likewise.
+      - name: zori_usd
+        description: "{{ doc('zori_usd') }}"
+      - name: zori_growth_1m
+        description: ZORI change over 1 month to t, as a fraction; zori_growth_3m, _6m and _12m likewise.
+      - name: zhvi_volatility_12m
+        description: Standard deviation of the 12 monthly ZHVI growth rates to t; null unless all 12 are known.
+      - name: zhvi_momentum
+        description: The last 3 months of ZHVI growth annualized, minus the last 12 months' growth.
+      - name: metro_zhvi_growth_12m
+        description: The metro's ZHVI change over the 12 months to t (Zillow's metro series).
+      - name: zhvi_to_metro_median
+        description: The ZIP's ZHVI over the median ZHVI of the metro's ZIPs in month t.
+      - name: redfin_month
+        description: Month of the Redfin values (a rolling three-month window ending then), t-1 under the release lag.
+      - name: inventory
+        description: "{{ doc('inventory') }}"
+      - name: median_days_on_market
+        description: "{{ doc('median_days_on_market') }}"
+      - name: sale_to_list_pct
+        description: >
+          {{ doc('sale_to_list_pct') }} With sold_above_list_pct, stands in for the share of price drops, which
+          the Redfin download lacks.
+      - name: sold_above_list_pct
+        description: "{{ doc('sold_above_list_pct') }}"
+      - name: off_market_in_two_weeks_pct
+        description: "{{ doc('off_market_in_two_weeks_pct') }}"
+      - name: permits_month
+        description: >
+          Last month of the trailing 12-month permit window. Usually t-1; up to 16 months earlier where a county's
+          months before 2022 are estimated from an annual total published the next year.
+      - name: permits_per_1000
+        description: >
+          Units permitted over the 12 months to permits_month per 1,000 residents, using the ACS population
+          published by then; a ZIP takes its counties' rates weighted by res_ratio.
+      - name: mortgage_rate_pct
+        description: 30-year fixed mortgage rate (Freddie Mac via FRED), average of the latest complete month.
+      - name: income_acs_vintage
+        description: The latest ACS 5-year vintage published by prediction_date.
+      - name: price_to_income
+        description: ZHVI in month t over the ZIP's median household income from income_acs_vintage.
+      - name: wages_quarter_start
+        description: First month of the latest QCEW quarter published by prediction_date (8 to 10 months before t).
+      - name: avg_weekly_wage_usd
+        description: The ZIP's res_ratio-weighted county average weekly wage in that quarter.
+      - name: avg_weekly_wage_yoy_growth
+        description: Wage change from the same quarter a year earlier, as a fraction.
+      - name: rent_to_wage
+        description: ZORI in month t over a month of avg_weekly_wage_usd (x 52 / 12).
+      - name: zillow_available_on
+        description: >
+          Release date of the Zillow values (the 15th of the month after t). redfin_, permits_, mortgage_, income_
+          and wages_available_on likewise give each source's release date; none is after prediction_date.
+      - name: target_growth_12m
+        description: Regression target, ZHVI change from t to t+12 months; null when t+12 is past the data.
+      - name: target_top20
+        description: Classification target, true when target_growth_12m is in the top 20% of the metro's ZIPs that month.
+      - name: split
+        description: >
+          By month t: train 2016-2022, validate 2023, test from 2024 while the target is known, score for the last
+          12 months. Training targets from 2022 run into 2023, so they overlap the validation period; Phase 12 may
+          leave a gap.
+        data_tests:
+          - not_null
+          - accepted_values: {arguments: {values: [train, validate, test, score]}}

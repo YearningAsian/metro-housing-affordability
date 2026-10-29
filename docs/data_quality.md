@@ -18,6 +18,7 @@ Generic tests live next to the model descriptions in `dbt/models/*/_*.yml`; sing
 | Every intermediate (`int_*`) | `unique` on (`geo_level`, `geo_code`, `month`) or its own grain; `not_null` on the `int_spine` keys | Same, one level up. |
 | `mart_metro_month` | `unique` on (`cbsa_code`, `month`); `not_null` on both | Phase 6 done-when: one row per key. |
 | `mart_zip_month` | `unique` on (`zip`, `month`); `not_null` on `zip`, `month`, `cbsa_code` | Same. |
+| `features_zip_month` | `unique` on (`zip`, `month`); `not_null` on `zip`, `month`, `cbsa_code`, `prediction_date`, `split`; `accepted_values` on `split` | One training row per key, and every row in exactly one split. |
 
 ## Relationships and accepted values
 
@@ -58,6 +59,7 @@ Bounds are wide on purpose: they catch unit mistakes, sign errors and broken joi
 | `assert_zillow_metro_matches_zip_rollup` | Fails when the population-weighted mean of a metro's ZIP ZHVIs differs from Zillow's metro ZHVI by more than 20%. | The two are not the same measure (Zillow weights every home; a population-weighted mean of ZIP values runs high), so the tolerance is loose. Through September 2026 the roll-up is 0.2% to 12.9% above the metro value, never below. A gap past 20% means the metro file, the ZIP file or the ZIP-to-metro mapping went wrong. |
 | `assert_permits_match_annual` (**warn**) | Warns when a metro-year sum of `fct_permits` differs from the BPS annual files by more than 15%. | Monthly files are never revised and the annual files add late reports, so monthly sums run a little low (−12.8% to +10.3%). One known source gap: Nashville (34980) 2022 is 36% low, because Davidson County's monthly reports sum to 5,525 units against 15,285 in the annual file. A warning, because the gap is in the source. |
 | `assert_no_growth_on_carried_wages` | Fails for a mart row where `wages_is_carried_forward` is true and wage or employment growth is not null. | QCEW lags about six months, so its latest quarter repeats into later months; dividing that by a real value a year earlier made Seattle's April–June 2026 wage growth read 8.4% against a true 2.6%. |
+| `assert_features_point_in_time` | Fails for a `features_zip_month` row where any `*_available_on` date is after `prediction_date`. | Phase 11 done-when. A feature built from data published after the prediction leaks the future, and the backtests would look better than the live model. Shifting every prediction date back one month makes all 184,077 rows fail, so the test bites. |
 | `assert_zillow_zips_in_crosswalk` | Fails for a Zillow ZIP in a study-metro county that the HUD ZIP-to-county crosswalk lacks. | Phase 3 done-when: every Zillow ZIP maps to exactly one metro. |
 | `assert_dim_zip_matches_hud_cbsa` (**warn**) | Warns where the metro `dim_zip` derives from the ZIP's main county differs from HUD's ZIP-to-CBSA file. | The two crosswalks or the delineation drifted apart. |
 
