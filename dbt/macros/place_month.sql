@@ -11,6 +11,11 @@
     'avg_weekly_wage_usd': 'avg_weekly_wage_yoy_growth',
     'employment': 'employment_yoy_growth',
 } %}
+{# QCEW lags about six months: its latest quarter is carried forward, so growth is null there #}
+{% set carried = {
+    'avg_weekly_wage_usd': 'wages_is_carried_forward',
+    'employment': 'wages_is_carried_forward',
+} %}
 {% set ints = ['int_prices', 'int_rents', 'int_supply', 'int_wages', 'int_migration', 'int_income'] %}
 with national as (
     select
@@ -49,7 +54,12 @@ select
     -- monthly rent over a month of the average weekly wage
     zori_usd / (avg_weekly_wage_usd * 52 / 12) as rent_to_wage,
     {% for col, name in yoy.items() %}
-        {{ col }} / lag({{ col }}, 12) over (partition by {{ key }} order by month) - 1 as {{ name }}
+        {%- if col in carried %}
+            -- a carried-forward value against a real one a year back is not growth
+            case when not {{ carried[col] }} then
+        {%- endif %}
+        {{ col }} / lag({{ col }}, 12) over (partition by {{ key }} order by month) - 1
+        {%- if col in carried %} end{% endif %} as {{ name }}
         {%- if not loop.last %},{% endif %}
     {% endfor %}
 from joined

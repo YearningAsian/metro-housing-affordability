@@ -57,18 +57,19 @@ Bounds are wide on purpose: they catch unit mistakes, sign errors and broken joi
 | `assert_zip_count_stable` | Fails when the number of ZIPs with ZHVI or ZORI drops more than 5% from the previous month. | Catches a truncated ZIP file or a broken ZIP join. The worst drop through September 2026 is 0.4%. |
 | `assert_zillow_metro_matches_zip_rollup` | Fails when the population-weighted mean of a metro's ZIP ZHVIs differs from Zillow's metro ZHVI by more than 20%. | The two are not the same measure (Zillow weights every home; a population-weighted mean of ZIP values runs high), so the tolerance is loose. Through September 2026 the roll-up is 0.2% to 12.9% above the metro value, never below. A gap past 20% means the metro file, the ZIP file or the ZIP-to-metro mapping went wrong. |
 | `assert_permits_match_annual` (**warn**) | Warns when a metro-year sum of `fct_permits` differs from the BPS annual files by more than 15%. | Monthly files are never revised and the annual files add late reports, so monthly sums run a little low (−12.8% to +10.3%). One known source gap: Nashville (34980) 2022 is 36% low, because Davidson County's monthly reports sum to 5,525 units against 15,285 in the annual file. A warning, because the gap is in the source. |
+| `assert_no_growth_on_carried_wages` | Fails for a mart row where `wages_is_carried_forward` is true and wage or employment growth is not null. | QCEW lags about six months, so its latest quarter repeats into later months; dividing that by a real value a year earlier made Seattle's April–June 2026 wage growth read 8.4% against a true 2.6%. |
 | `assert_zillow_zips_in_crosswalk` | Fails for a Zillow ZIP in a study-metro county that the HUD ZIP-to-county crosswalk lacks. | Phase 3 done-when: every Zillow ZIP maps to exactly one metro. |
 | `assert_dim_zip_matches_hud_cbsa` (**warn**) | Warns where the metro `dim_zip` derives from the ZIP's main county differs from HUD's ZIP-to-CBSA file. | The two crosswalks or the delineation drifted apart. |
 
 ## Source freshness
 
-`dbt source freshness` compares each bronze table's latest `_loaded_at` with now.
+`dbt source freshness` compares each bronze table's latest `_loaded_at` with now. The monthly CI run checks it last, after saving the state, so a source that stopped updating fails the run and sends the failure email. An unchanged download adds no bronze copy, so `_loaded_at` only moves when the content changes.
 
 | Sources | Warn after | Fail after | Reason |
 | --- | --- | --- | --- |
 | Zillow (4 tables) | 45 days | 75 days | Zillow publishes mid-month and ingest runs monthly, so a load older than 45 days means a missed run. |
-| Redfin, BPS monthly, FRED, HUD crosswalk | 35 days | 65 days | Monthly sources: one load is expected every month. |
-| QCEW | 100 days | 200 days | Quarterly. |
+| Redfin, BPS monthly, FRED | 35 days | 65 days | Monthly sources: one load is expected every month. |
+| QCEW, HUD crosswalk | 100 days | 200 days | Quarterly. The crosswalk is fetched monthly, but HUD changes it once a quarter. |
 | ACS, IRS migration, HUD FMR, BPS annual | 400 days | none | Yearly releases; a late release is a warning, never a failure. |
 | BPS year-to-date, Census delineation and shapes | none | none | Loaded once; they do not change. |
 

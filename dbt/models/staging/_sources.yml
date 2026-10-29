@@ -23,6 +23,9 @@ sources:
       - name: zillow__zip_zhvi
         description: Zillow ZIP ZHVI, one column per month.
         config: *zillow
+      - name: zillow__county_zhvi
+        description: Zillow county ZHVI, one column per month. Prices the IRS migration origin counties.
+        config: *zillow
       - name: zillow__metro_zori
         description: Zillow metro ZORI (all homes, smoothed, SA), one column per month.
         config: *zillow
@@ -59,7 +62,7 @@ sources:
         config: *yearly
       - name: qcew__industry_10
         description: BLS QCEW all-industry totals, one file per quarter.
-        config:
+        config: &quarterly
           freshness:
             warn_after: {count: 100, period: day}
             error_after: {count: 200, period: day}
@@ -76,8 +79,11 @@ sources:
         config: *yearly
       - name: hud_crosswalk__zip_county
         description: HUD-USPS ZIP-to-county crosswalk, latest quarter.
+        # fetched monthly, but HUD publishes quarterly, so two loads in three are unchanged and add no bronze copy
+        config: *quarterly
       - name: hud_crosswalk__zip_cbsa
         description: HUD-USPS ZIP-to-CBSA crosswalk, latest quarter. Only used as a cross-check.
+        config: *quarterly
       - name: census_geo__cbsa_delineation
         description: Census CBSA delineation, July 2023. Footnote rows are dropped in staging.
         config: &static

@@ -55,5 +55,5 @@ Column descriptions shared by the int_ models and the marts, referenced from the
 {% docs rent_to_wage %}zori_usd divided by a month of the average weekly wage (avg_weekly_wage_usd * 52 / 12).{% enddocs %}
 {% docs zhvi_yoy_growth %}Change in zhvi_usd from the same month a year earlier, as a fraction (0.05 = 5%).{% enddocs %}
 {% docs zori_yoy_growth %}Change in zori_usd from the same month a year earlier, as a fraction.{% enddocs %}
-{% docs avg_weekly_wage_yoy_growth %}Change in avg_weekly_wage_usd from the same month a year earlier, as a fraction.{% enddocs %}
-{% docs employment_yoy_growth %}Change in employment from the same month a year earlier, as a fraction.{% enddocs %}
+{% docs avg_weekly_wage_yoy_growth %}Change in avg_weekly_wage_usd from the same month a year earlier, as a fraction. Null where wages_is_carried_forward.{% enddocs %}
+{% docs employment_yoy_growth %}Change in employment from the same month a year earlier, as a fraction. Null where wages_is_carried_forward.{% enddocs %}

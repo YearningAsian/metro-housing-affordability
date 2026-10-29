@@ -102,7 +102,7 @@ Every column is described in the schema YAML; descriptions shared by the int_ mo
 | Intermediate (silver) | `int_spine`, `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`, `int_income` |
 | Dimensions (gold) | `dim_date`, `dim_metro`, `dim_county`, `dim_zip` |
 | Facts (gold) | `fct_home_prices`, `fct_rents`, `fct_fair_market_rents`, `fct_market_activity`, `fct_permits`, `fct_wages`, `fct_migration`, `fct_income`, `fct_economy` |
-| Marts (gold) | `mart_metro_month`, `mart_zip_month`; later `mart_zip_forecast` (a view over `ml.predictions`, Phase 12) |
+| Marts (gold) | `mart_metro_month`, `mart_zip_month`, `mart_migration_origins` (Phase 9: IRS inflows by origin county with both places' ZHVI); later `mart_zip_forecast` (a view over `ml.predictions`, Phase 12) |
 | ML | `ml.features_zip_month` (dbt, Phase 11), `ml.predictions` (written by the training code, Phase 12) |
 
 The HUD ZIP-to-CBSA crosswalk and the CBSA shapes have no staging model: a dbt test reads the crosswalk from bronze as a cross-check of `dim_zip`, and the shapes stay in bronze for maps. `int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate goes through `int_wages`.
@@ -263,6 +263,7 @@ flowchart LR
     subgraph marts [gold: marts]
         mart_metro_month
         mart_zip_month
+        mart_migration_origins
         mart_zip_forecast[mart_zip_forecast, Phase 12]
     end
     subgraph ml
@@ -324,6 +325,9 @@ flowchart LR
     intermediate --> mart_zip_month
     fct_economy --> mart_metro_month
     fct_economy --> mart_zip_month
+    s_irs --> mart_migration_origins
+    s_zillow --> mart_migration_origins
+    fct_home_prices --> mart_migration_origins
 
     mart_zip_month --> features
     features --> predictions

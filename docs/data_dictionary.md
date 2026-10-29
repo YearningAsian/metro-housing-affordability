@@ -65,7 +65,7 @@ Notes:
 
 Files from `https://files.zillowstatic.com/research/public_csvs/`:
 
-- ZHVI: `{Zip,Metro}_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv`
+- ZHVI: `{Zip,Metro}_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv`, plus `County_zhvi_…` (added in Phase 9 to price IRS migration origins: 3,071 counties, keyed by `StateCodeFIPS` + `MunicipalCodeFIPS`)
 - ZORI: `{Zip,Metro}_zori_uc_sfrcondomfr_sm_sa_month.csv` (seasonally adjusted; Phase 4 switched from the NSA file the profile used)
 
 **Shape.** Wide: one row per region, one column per month (`2000-01-31`, …). Staging unpivots to (`RegionID`, month, value). Rows after unpivot: ZIP ZHVI 6,508,601; ZIP ZORI 469,420; metro ZHVI 238,029; metro ZORI 53,977. No duplicate keys.

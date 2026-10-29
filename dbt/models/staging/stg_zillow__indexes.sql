@@ -1,5 +1,5 @@
--- Zillow ZHVI and ZORI for metros and ZIPs, one row per region, measure and month (Zillow dates each month by its
--- last day).
+-- Zillow ZHVI and ZORI for metros and ZIPs, plus county ZHVI, one row per region, measure and month (Zillow dates
+-- each month by its last day).
 with wide as (
     select
         'metro' as geo_level,
@@ -13,6 +13,13 @@ with wide as (
         'zhvi' as measure,
         *
     from {{ source('bronze', 'zillow__zip_zhvi') }}
+    {{ latest_load() }}
+    union all by name
+    select
+        'county' as geo_level,
+        'zhvi' as measure,
+        *
+    from {{ source('bronze', 'zillow__county_zhvi') }}
     {{ latest_load() }}
     union all by name
     select
@@ -40,6 +47,8 @@ select
     measure,
     regionid::bigint as region_id,
     case when geo_level = 'zip' then regionname end as zip,
+    case when geo_level = 'county' then lpad(statecodefips, 2, '0') || lpad(municipalcodefips, 3, '0') end
+        as county_fips,
     date_trunc('month', month_end::date)::date as month,
     value_text::double as value
 from long

@@ -465,3 +465,46 @@ models:
             field: zip
     # zip is the only column mart_metro_month lacks; it is described above and tested at model level
     columns: *mart_columns
+
+  - name: mart_migration_origins
+    description: >
+      One row per study metro, origin county outside the metro and tax year: IRS movers into the metro's counties
+      from that county, with the Zillow ZHVI of both places averaged over the move year. Flows under 20 returns are
+      pooled by IRS and absent here; moves within the metro are left out.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "cbsa_code || origin_county_fips || tax_year"
+    columns:
+      - *cbsa_code
+      - name: origin_county_fips
+        description: 5-char FIPS of the county the movers came from.
+        data_tests: [not_null]
+      - name: origin_name
+        description: Origin county and state, e.g. "King County, WA"; the IRS name where the 2024 boundaries lack it.
+      - name: origin_cbsa_code
+        description: The origin county's 2023 CBSA; null outside any CBSA.
+      - name: origin_cbsa_title
+        description: That CBSA's title.
+      - name: tax_year
+        description: The later filing year of the IRS file (2023 for countyinflow2223.csv), as in fct_migration.
+        data_tests: [not_null]
+      - name: move_year
+        description: tax_year - 1, the calendar year most of these moves happened in; the ZHVI columns average it.
+      - name: returns
+        description: Tax returns (households) that moved.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0}}}]
+      - name: people
+        description: People that moved (exemptions claimed).
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0}}}]
+      - name: agi_usd
+        description: Adjusted gross income of the movers, dollars.
+      - name: agi_per_return_usd
+        description: agi_usd per return.
+      - name: origin_zhvi_usd
+        description: Origin county's Zillow ZHVI, average over move_year; null where Zillow has no county value.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
+      - name: metro_zhvi_usd
+        description: The study metro's Zillow ZHVI, average over move_year.
+      - name: origin_to_metro_zhvi
+        description: origin_zhvi_usd / metro_zhvi_usd; above 1 means movers came from a pricier county.

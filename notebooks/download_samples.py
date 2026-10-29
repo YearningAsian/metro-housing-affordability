@@ -1,7 +1,8 @@
 """Phase 2: pull one sample of each source into data/samples/<source>/.
 
 Run from the repo root:  uv run python notebooks/download_samples.py
-Skips files that already exist. API keys come from .env. Phase 4 extractors replace this.
+Skips files that already exist. API keys come from .env. Phase 4 extractors replace this; kept as the record of
+the Phase 2 samples. The Redfin URL below stopped working in June 2026 (see ingest/redfin.py for the new feed).
 """
 
 import json

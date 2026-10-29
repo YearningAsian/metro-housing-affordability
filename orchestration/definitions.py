@@ -54,7 +54,7 @@ def dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build", "--full-refresh"], context=context).stream()
 
 
-MARTS = ["mart_metro_month", "mart_zip_month"]
+MARTS = ["mart_metro_month", "mart_zip_month", "mart_migration_origins"]
 
 
 @asset(

@@ -22,16 +22,19 @@ models:
         description: HUD FMR area codes in the metro; the first is the core area.
 
   - name: stg_zillow__indexes
-    description: Zillow ZHVI and ZORI for metros and ZIPs, unpivoted to one row per region, measure and month.
+    description: >
+      Zillow ZHVI and ZORI for metros and ZIPs, plus county ZHVI, unpivoted to one row per region, measure and month.
     columns:
       - name: geo_level
-        description: metro or zip.
+        description: metro, county (zhvi only) or zip.
       - name: measure
         description: zhvi (home values) or zori (rents).
       - name: region_id
         description: Zillow RegionID.
       - name: zip
         description: 5-char ZIP for ZIP rows, else null.
+      - name: county_fips
+        description: 5-char county FIPS for county rows, else null.
       - name: month
         description: First day of the month (Zillow dates it by the last day).
       - name: value

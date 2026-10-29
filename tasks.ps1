@@ -62,8 +62,13 @@ switch ($Task) {
     "pull-state" {
         Invoke-R2 sync r2:/bronze data/bronze
         Invoke-R2 cp r2:/warehouse.duckdb data/warehouse.duckdb
+        # the pulled bronze views point at the pushing machine's paths; census_geo is fetched once, so this run
+        # downloads nothing and only rebuilds the views
+        Invoke-Native uv run python -m ingest census_geo
     }
     # no --delete: a bronze load is never removed from the bucket
+    # shortcut: every monthly copy of a rolling file is kept (about 450 MB a month, mostly Redfin and Zillow ZIPs);
+    # prune superseded copies before the bucket nears R2's 10 GB free tier
     "push-state" {
         Invoke-R2 sync data/bronze r2:/bronze
         Invoke-R2 cp data/warehouse.duckdb r2:/warehouse.duckdb
