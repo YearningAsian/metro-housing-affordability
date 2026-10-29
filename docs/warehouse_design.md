@@ -77,7 +77,7 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 | `fct_income` | (`geo_level`, `geo_code`, `acs_vintage`); zip (through its ZCTA), county and metro | `median_household_income_usd`, `population`, `median_gross_rent_usd`, `rent_pct_income` | ACS 5-year |
 | `fct_economy` | (`series_id`, `month`); `cbsa_code` null for national series | `value` | FRED: mortgage rate, CPI, metro unemployment rate |
 
-Before 2022 the BPS monthly county files cover only a sample of about 740 counties, and 19 of the 96 study counties (Tarrant and Denton among them) are missing from them for 2015-2021. For such a county-year, `fct_permits` spreads the annual total evenly over the 12 months and sets `is_estimated`. BPS annual files are not a fact of their own; Phase 7 tests that yearly sums of `fct_permits` match them.
+Before 2022 the BPS monthly county files cover only a sample of about 740 counties, and 19 of the 96 study counties (Tarrant and Denton among them) are missing from them for 2015-2021. For such a county-year, `fct_permits` spreads the annual total evenly over the 12 months and sets `is_estimated`. BPS annual files are not a fact of their own; `assert_permits_match_annual` warns when a metro's yearly `fct_permits` sum is more than 15% off them (see [data quality](data_quality.md)).
 
 ### Marts (gold)
 

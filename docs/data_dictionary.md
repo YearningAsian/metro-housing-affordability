@@ -103,7 +103,7 @@ Files from `https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_data_ce
 - ZIP rows carry `METRO`, the metro name as Redfin assigns it (`Nashville, TN metro area`), not a code. Map ZIPs to CBSAs through the HUD crosswalk instead.
 - No price-drop column exists in this feed. The Phase 11 "share of price drops" feature has no Redfin source.
 - ZIP rows are sparse: 18% of `MONTHS OF SUPPLY` and 14% of `MEDIAN SALE PRICE NSA ($)` values are `NA`.
-- Outliers: 217 ZIP rows have a median sale price above 10 million USD (max 65,900,010). Phase 7 adds range tests; small ZIPs with few sales are noisy. Metro medians top out at 4,875,000.
+- Outliers: 217 ZIP rows have a median sale price above 10 million USD (max 65,900,010). Small ZIPs with few sales are noisy, so the [range tests](data_quality.md#ranges) set no upper bound on prices. Metro medians top out at 4,875,000.
 - `MOM` and `YOY` columns are Redfin's own changes; percent changes are in `(%)`, ratio and share changes in `(PPTS)`, days-on-market changes in `(DAYS)`. They are not used (see Conventions).
 
 | Column | Type | Unit | Definition |

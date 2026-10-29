@@ -36,7 +36,15 @@ models:
     columns:
       - name: cbsa_code
         description: 5-digit CBSA code.
-        data_tests: [unique, not_null]
+        data_tests:
+          - unique
+          - not_null
+          # the 11 study metros of config/metros.yml; update both when adding a metro
+          - accepted_values:
+              arguments:
+                values:
+                  ['34980', '12060', '36740', '42660', '12420', '38060', '39580', '16740', '45300', '19100',
+                   '19740']
       - name: metro_name
         description: Short metro name from config/metros.yml.
       - name: role
@@ -126,11 +134,35 @@ models:
           arguments:
             column_name: "geo_level || geo_code || month"
     columns:
-      - &geo_level {name: geo_level, description: "{{ doc('geo_level') }}", data_tests: [not_null]}
-      - &geo_code {name: geo_code, description: "{{ doc('geo_code') }}", data_tests: [not_null]}
-      - &cbsa_code {name: cbsa_code, description: "{{ doc('cbsa_code') }}", data_tests: [not_null]}
+      - &geo_level
+        name: geo_level
+        description: "{{ doc('geo_level') }}"
+        data_tests:
+          - not_null
+          - accepted_values: {arguments: {values: [metro, county, zip]}}
+      - &geo_code
+        name: geo_code
+        description: "{{ doc('geo_code') }}"
+        data_tests:
+          - not_null
+          # metro rows: geo_code equals cbsa_code, tested below
+          - relationships:
+              arguments: {to: ref('dim_zip'), field: zip}
+              config: {where: "geo_level = 'zip'"}
+          - relationships:
+              arguments: {to: ref('dim_county'), field: county_fips}
+              config: {where: "geo_level = 'county'"}
+      - &cbsa_code
+        name: cbsa_code
+        description: "{{ doc('cbsa_code') }}"
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_metro'), field: cbsa_code}}
       - &month {name: month, description: "{{ doc('month') }}", data_tests: [not_null]}
-      - &zhvi_usd {name: zhvi_usd, description: "{{ doc('zhvi_usd') }}"}
+      - &zhvi_usd
+        name: zhvi_usd
+        description: "{{ doc('zhvi_usd') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
 
   - name: fct_rents
     description: Zillow ZORI for the study metros and their ZIPs, one row per place and month.
@@ -140,7 +172,10 @@ models:
       - *geo_code
       - *cbsa_code
       - *month
-      - &zori_usd {name: zori_usd, description: "{{ doc('zori_usd') }}"}
+      - &zori_usd
+        name: zori_usd
+        description: "{{ doc('zori_usd') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
 
   - name: fct_market_activity
     description: >
@@ -158,14 +193,28 @@ models:
       - &active_listings {name: active_listings, description: "{{ doc('active_listings') }}"}
       - &inventory {name: inventory, description: "{{ doc('inventory') }}"}
       - &median_days_on_market {name: median_days_on_market, description: "{{ doc('median_days_on_market') }}"}
-      - &median_sale_price_usd {name: median_sale_price_usd, description: "{{ doc('median_sale_price_usd') }}"}
+      - &median_sale_price_usd
+        name: median_sale_price_usd
+        description: "{{ doc('median_sale_price_usd') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
       - &median_sale_ppsf_usd {name: median_sale_ppsf_usd, description: "{{ doc('median_sale_ppsf_usd') }}"}
-      - &median_list_price_usd {name: median_list_price_usd, description: "{{ doc('median_list_price_usd') }}"}
+      - &median_list_price_usd
+        name: median_list_price_usd
+        description: "{{ doc('median_list_price_usd') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
       - &median_list_ppsf_usd {name: median_list_ppsf_usd, description: "{{ doc('median_list_ppsf_usd') }}"}
-      - &sale_to_list_pct {name: sale_to_list_pct, description: "{{ doc('sale_to_list_pct') }}"}
-      - &sold_above_list_pct {name: sold_above_list_pct, description: "{{ doc('sold_above_list_pct') }}"}
+      - &sale_to_list_pct
+        name: sale_to_list_pct
+        description: "{{ doc('sale_to_list_pct') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 50, max_value: 200}}}]
+      - &sold_above_list_pct
+        name: sold_above_list_pct
+        description: "{{ doc('sold_above_list_pct') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 100}}}]
       - &off_market_in_two_weeks_pct
-        {name: off_market_in_two_weeks_pct, description: "{{ doc('off_market_in_two_weeks_pct') }}"}
+        name: off_market_in_two_weeks_pct
+        description: "{{ doc('off_market_in_two_weeks_pct') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 100}}}]
       - &months_of_supply {name: months_of_supply, description: "{{ doc('months_of_supply') }}"}
       - &is_division_blend {name: is_division_blend, description: "{{ doc('is_division_blend') }}"}
 
@@ -180,7 +229,9 @@ models:
     columns:
       - name: county_fips
         description: 5-char county FIPS.
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_county'), field: county_fips}}
       - *cbsa_code
       - *month
       - name: units_1
@@ -226,7 +277,9 @@ models:
     columns:
       - name: county_fips
         description: 5-char county FIPS.
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_county'), field: county_fips}}
       - *cbsa_code
       - name: tax_year
         description: Later of the IRS file's two tax years.
@@ -334,7 +387,9 @@ models:
       - *median_list_ppsf_usd
       - *is_division_blend
       - *zori_usd
-      - {name: fmr_2br_usd, description: "{{ doc('fmr_2br_usd') }}"}
+      - name: fmr_2br_usd
+        description: "{{ doc('fmr_2br_usd') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, strictly: true}}}]
       - {name: fmr_fiscal_year, description: "{{ doc('fmr_fiscal_year') }}"}
       - {name: fmr_is_carried_forward, description: "{{ doc('fmr_is_carried_forward') }}"}
       - *homes_sold
@@ -348,14 +403,20 @@ models:
       - *sold_above_list_pct
       - *off_market_in_two_weeks_pct
       - {name: permit_units, description: "{{ doc('permit_units') }}"}
-      - {name: permits_per_1000, description: "{{ doc('permits_per_1000') }}"}
+      - name: permits_per_1000
+        description: "{{ doc('permits_per_1000') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 100}}}]
       - *employment
       - *avg_weekly_wage_usd
       - {name: wages_quarter, description: "{{ doc('wages_quarter') }}"}
       - {name: wages_is_carried_forward, description: "{{ doc('wages_is_carried_forward') }}"}
-      - {name: unemployment_rate_pct, description: "{{ doc('unemployment_rate_pct') }}"}
+      - name: unemployment_rate_pct
+        description: "{{ doc('unemployment_rate_pct') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 30}}}]
       - {name: net_migration_people, description: "{{ doc('net_migration_people') }}"}
-      - {name: net_migration_rate, description: "{{ doc('net_migration_rate') }}"}
+      - name: net_migration_rate
+        description: "{{ doc('net_migration_rate') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: -100, max_value: 100}}}]
       - {name: migration_tax_year, description: "{{ doc('migration_tax_year') }}"}
       - {name: migration_is_carried_forward, description: "{{ doc('migration_is_carried_forward') }}"}
       - *median_household_income_usd
@@ -366,12 +427,24 @@ models:
       - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}
       - {name: mortgage_rate_pct, description: "{{ doc('mortgage_rate_pct') }}"}
       - {name: cpi, description: "{{ doc('cpi') }}"}
-      - {name: price_to_income, description: "{{ doc('price_to_income') }}"}
-      - {name: rent_to_wage, description: "{{ doc('rent_to_wage') }}"}
-      - {name: zhvi_yoy_growth, description: "{{ doc('zhvi_yoy_growth') }}"}
-      - {name: zori_yoy_growth, description: "{{ doc('zori_yoy_growth') }}"}
-      - {name: avg_weekly_wage_yoy_growth, description: "{{ doc('avg_weekly_wage_yoy_growth') }}"}
-      - {name: employment_yoy_growth, description: "{{ doc('employment_yoy_growth') }}"}
+      - name: price_to_income
+        description: "{{ doc('price_to_income') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0.5, max_value: 50}}}]
+      - name: rent_to_wage
+        description: "{{ doc('rent_to_wage') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0.05, max_value: 2}}}]
+      - name: zhvi_yoy_growth
+        description: "{{ doc('zhvi_yoy_growth') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: -0.5, max_value: 1}}}]
+      - name: zori_yoy_growth
+        description: "{{ doc('zori_yoy_growth') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: -0.5, max_value: 1}}}]
+      - name: avg_weekly_wage_yoy_growth
+        description: "{{ doc('avg_weekly_wage_yoy_growth') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: -0.5, max_value: 1}}}]
+      - name: employment_yoy_growth
+        description: "{{ doc('employment_yoy_growth') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: -0.5, max_value: 1}}}]
 
   - name: mart_zip_month
     description: >

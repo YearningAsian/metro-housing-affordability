@@ -10,6 +10,7 @@ switch ($Task) {
         $py = if ($IsWindows -or $env:OS -eq "Windows_NT") { "cpython-3.12-windows-x86_64-none" } else { "3.12" }
         Invoke-Native uv sync --python $py
         Invoke-Native uv run pre-commit install
+        Invoke-Native uv run dbt deps --project-dir dbt --profiles-dir dbt
         if (-not (Test-Path .env)) { Copy-Item .env.example .env; Write-Host "Created .env from .env.example; add your API keys." }
     }
     "lint" { Invoke-Native uv run pre-commit run --all-files }

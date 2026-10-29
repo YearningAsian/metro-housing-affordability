@@ -15,12 +15,20 @@ sources:
     tables:
       - name: zillow__metro_zhvi
         description: Zillow metro ZHVI (all homes, mid tier, smoothed, SA), one column per month.
+        # Zillow publishes mid-month and ingest runs monthly, so a load older than 45 days means a missed run
+        config: &zillow
+          freshness:
+            warn_after: {count: 45, period: day}
+            error_after: {count: 75, period: day}
       - name: zillow__zip_zhvi
         description: Zillow ZIP ZHVI, one column per month.
+        config: *zillow
       - name: zillow__metro_zori
         description: Zillow metro ZORI (all homes, smoothed, SA), one column per month.
+        config: *zillow
       - name: zillow__zip_zori
         description: Zillow ZIP ZORI, one column per month.
+        config: *zillow
       - name: redfin__metros
         description: Redfin housing market data, metros and metro divisions, monthly, all residential.
       - name: redfin__zips

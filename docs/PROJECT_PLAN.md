@@ -213,12 +213,12 @@ Part C turns raw files into two tested, analysis-ready tables that refresh thems
 
 ### Phase 7: Data quality (week 8)
 
-- [ ] Add generic tests: `unique` and `not_null` on mart keys, `relationships` from facts to dimensions, `accepted_values` on metro codes
-- [ ] Add range tests with `dbt-expectations`: prices above 0, yearly growth between −50% and +100%, ratios in plausible bounds
-- [ ] Check coverage: every new month has all 11 metros, and ZIP count drops no more than 5% month over month
-- [ ] Set source freshness: warn when Zillow data is 45 days old, fail at 75
-- [ ] Reconcile Zillow's published metro values against your own ZIP roll-up, within a documented tolerance
-- [ ] List every test and its reason in `docs/data_quality.md`
+- [x] Add generic tests: `unique` and `not_null` on mart keys, `relationships` from facts to dimensions, `accepted_values` on metro codes
+- [x] Add range tests with `dbt-expectations`: prices above 0, yearly growth between −50% and +100%, ratios in plausible bounds
+- [x] Check coverage: every new month has all 11 metros, and ZIP count drops no more than 5% month over month
+- [x] Set source freshness: warn when Zillow data is 45 days old, fail at 75
+- [x] Reconcile Zillow's published metro values against your own ZIP roll-up, within a documented tolerance
+- [x] List every test and its reason in `docs/data_quality.md`
 
 **Deliverable:** the test suite. **Done when:** a deliberately broken fixture fails at least one test.
 

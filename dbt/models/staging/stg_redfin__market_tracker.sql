@@ -40,8 +40,15 @@ select
     nullif("MEDIAN NEW LISTING PRICE ($)", 'NA')::double as median_list_price_usd,
     nullif("MEDIAN NEW LISTING PRICE PER SQ.FT. ($)", 'NA')::double as median_list_ppsf_usd,
     nullif("AVERAGE SALE TO LIST RATIO (%)", 'NA')::double as sale_to_list_pct,
-    nullif("SHARE SOLD ABOVE ORIGINAL LIST (%)", 'NA')::double as sold_above_list_pct,
-    nullif("PERCENT OFF MARKET IN TWO WEEKS (%)", 'NA')::double as off_market_in_two_weeks_pct,
+    -- a few metro rows (mostly 2012-2014) carry small negative shares, which cannot be real; those become null
+    case
+        when nullif("SHARE SOLD ABOVE ORIGINAL LIST (%)", 'NA')::double >= 0
+            then nullif("SHARE SOLD ABOVE ORIGINAL LIST (%)", 'NA')::double
+    end as sold_above_list_pct,
+    case
+        when nullif("PERCENT OFF MARKET IN TWO WEEKS (%)", 'NA')::double >= 0
+            then nullif("PERCENT OFF MARKET IN TWO WEEKS (%)", 'NA')::double
+    end as off_market_in_two_weeks_pct,
     "LAST UPDATED"::date as last_updated
 from unioned
 -- noqa: enable=RF05,RF06

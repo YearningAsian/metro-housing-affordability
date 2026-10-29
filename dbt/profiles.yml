@@ -4,5 +4,6 @@ metro_housing:
   outputs:
     dev:
       type: duckdb
-      path: data/warehouse.duckdb
+      # DUCKDB_PATH lets tests/test_dbt_quality.py point dbt at a throwaway fixture database.
+      path: "{{ env_var('DUCKDB_PATH', 'data/warehouse.duckdb') }}"
       extensions: [excel, spatial]

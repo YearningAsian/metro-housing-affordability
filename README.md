@@ -54,6 +54,8 @@ Keys, units, release lags and quirks for each source are in the [data dictionary
 
 The warehouse layers, naming, grains and planned models are in the [warehouse design](docs/warehouse_design.md).
 
+Every dbt test and its reason are in [data quality](docs/data_quality.md).
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).
