@@ -224,13 +224,13 @@ Part C turns raw files into two tested, analysis-ready tables that refresh thems
 
 ### Phase 8: Orchestration and automation (week 9)
 
-- [ ] Add one entry point, `make pipeline`: ingest, then `dbt build`, then export
-- [ ] Schedule a GitHub Actions workflow monthly on the 20th, after Zillow's mid-month release, plus a manual trigger
+- [x] Add one entry point, `make pipeline`: ingest, then `dbt build`, then export (`.\tasks.ps1 pipeline`; no make on Windows)
+- [x] Schedule a GitHub Actions workflow monthly on the 20th, after Zillow's mid-month release, plus a manual trigger
 - [ ] Persist the DuckDB file between runs as a release asset or in object storage such as S3 or Cloudflare R2
-- [ ] Make the large ZIP-month models incremental
-- [ ] Send failure alerts by email or a Slack or Discord webhook
+- [x] Make the large ZIP-month models incremental
+- [x] Send failure alerts by email or a Slack or Discord webhook
 - [ ] Publish `dbt docs` to GitHub Pages on every successful run
-- [ ] Optional: re-run the pipeline as a Dagster or Prefect job to show orchestrator skills
+- [x] Optional: re-run the pipeline as a Dagster or Prefect job to show orchestrator skills
 
 **Deliverable:** the scheduled workflow. **Done when:** two scheduled runs in a row succeed with no manual fixes.
 

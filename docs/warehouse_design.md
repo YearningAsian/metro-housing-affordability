@@ -8,7 +8,7 @@ How the DuckDB warehouse (`data/warehouse.duckdb`) is laid out, what every model
 | --- | --- | --- | --- |
 | `bronze` | One view per bronze entity, `bronze.<source>__<entity>`, over every Parquet load in `data/bronze/<source>/<entity>/`. All columns are text plus `_source_file`, `_load_id`, `_loaded_at`, `_file_hash`. | `python -m ingest` (`register_views` runs at the end of every run) | view |
 | `silver` | Staging (`stg_`) and intermediate (`int_`) models: typed, cleaned, conformed to month and geography. | dbt | view (staging), table (intermediate) |
-| `gold` | Dimensions (`dim_`), facts (`fct_`) and marts (`mart_`). The dashboard, models and exports read only from here. | dbt | table |
+| `gold` | Dimensions (`dim_`), facts (`fct_`) and marts (`mart_`). The dashboard, models and exports read only from here. | dbt | table (`mart_zip_month`: incremental) |
 | `ml` | Feature tables built by dbt and predictions written by the training code. | dbt and Python | table |
 
 `main` keeps only `_load_log` (written by ingestion). A `generate_schema_name` macro makes dbt build into the configured schema as is (its default would be `main_silver`).
@@ -89,6 +89,8 @@ Before 2022 the BPS monthly county files cover only a sample of about 740 counti
 - `permits_per_1000` = trailing 12-month permitted units / population × 1,000 (from `int_supply`)
 - `net_migration_rate` = net migrants / population × 1,000 (from `int_migration`)
 - national mortgage rate and CPI on every row; metro unemployment rate
+
+`mart_zip_month` is incremental (delete+insert on `zip`, `month`): a plain `dbt build` rewrites the last 24 months and keeps the rest. It still computes every month first, so the year-over-year columns see the 12 months before the window, and the result matches a full build. The monthly pipeline passes `--full-refresh` anyway, because Zillow and Redfin restate older months in each release. The mart is small (about 277,000 rows, under a second as a table), so the incremental path saves no time today; it is there for when the ZIP set grows.
 
 Every column is described in the schema YAML; descriptions shared by the int_ models and the marts live once in `dbt/models/_columns.md` as doc blocks. Run `.\tasks.ps1 docs` to browse them.
 

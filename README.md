@@ -73,3 +73,31 @@ Then put your Census, FRED and HUD keys in `.env`, and run:
 ```
 
 `.\tasks.ps1 ingest fred zillow` loads only the named sources. A second run in the same month downloads nothing.
+
+## Monthly pipeline
+
+```powershell
+.\tasks.ps1 pipeline   # ingest, then dbt build --full-refresh (models and tests), then export the marts to data/export/*.parquet
+```
+
+[`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml) runs it on the 20th of each month, after Zillow's mid-month release, and on demand (Actions > pipeline > Run workflow). Each run:
+
+1. pulls the state from a private Cloudflare R2 bucket: `warehouse.duckdb` (with the load log) and every bronze load in `data/bronze`. Raw downloads are not kept; bronze holds their content.
+2. runs `.\tasks.ps1 pipeline`.
+3. pushes the state and the exports back to the bucket, only if the build passed.
+4. publishes the dbt docs to GitHub Pages.
+
+A failed scheduled run emails whoever last edited the workflow's `cron` line (GitHub's own notification; check Settings > Notifications > Actions). GitHub turns off scheduled workflows in a public repo after 60 days without repository activity.
+
+One-time setup:
+
+1. In Cloudflare, create an R2 bucket and an R2 API token with Object Read & Write on it. Put its access key ID, secret, S3 endpoint (`https://<account-id>.r2.cloudflarestorage.com`) and the bucket name in `.env` (see `.env.example`).
+2. Seed the bucket from a local run: `.\tasks.ps1 push-state`. `.\tasks.ps1 pull-state` fetches it back, overwriting the local warehouse.
+3. Add the same four values as repository secrets (`gh secret set R2_BUCKET`, and so on), next to the Census, FRED and HUD keys.
+4. Set Settings > Pages > Source to GitHub Actions.
+
+The same flow runs as Dagster assets (ingest, every dbt model with its tests, the export) with a lineage graph and a schedule:
+
+```powershell
+uv run --group orchestrate dagster dev -f orchestration/definitions.py   # http://localhost:3000
+```

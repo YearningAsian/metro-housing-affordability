@@ -1,0 +1,61 @@
+# Monthly refresh: pull state from R2, ingest, dbt build, export, push state back, publish dbt docs.
+# A failed scheduled run emails whoever last changed the cron line (GitHub's own notification).
+name: pipeline
+
+on:
+  schedule:
+    - cron: "0 12 20 * *" # the 20th, after Zillow's mid-month release
+  workflow_dispatch:
+
+# never two runs writing the same bucket at once
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+      - run: uv sync --frozen --python 3.12
+      - run: uv run dbt deps --project-dir dbt --profiles-dir dbt
+      - run: ./tasks.ps1 pull-state
+      - run: ./tasks.ps1 pipeline
+      # only after a clean build, so a bad load never becomes the next run's starting point
+      - run: ./tasks.ps1 push-state
+      - run: |
+          uv run dbt docs generate --static --project-dir dbt --profiles-dir dbt
+          New-Item -ItemType Directory site | Out-Null
+          Copy-Item dbt/target/static_index.html site/index.html
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  docs:
+    needs: pipeline
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
