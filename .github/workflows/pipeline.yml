@@ -1,4 +1,4 @@
-# Monthly refresh: pull state from R2, ingest, dbt build, export, push state back, publish dbt docs.
+# Monthly refresh: pull state from R2, ingest, dbt build, export, push state back, publish dbt docs and the exports.
 # A failed scheduled run emails whoever last changed the cron line (GitHub's own notification).
 name: pipeline
 
@@ -48,6 +48,8 @@ jobs:
           uv run dbt docs generate --static --project-dir dbt --profiles-dir dbt
           New-Item -ItemType Directory site | Out-Null
           Copy-Item dbt/target/static_index.html site/index.html
+      # the dashboard reads the exports from Pages: <pages url>/data/<file>
+      - run: Copy-Item -Recurse data/export site/data
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
