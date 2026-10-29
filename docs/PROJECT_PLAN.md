@@ -255,15 +255,15 @@ Part D answers the five questions with numbers and puts them in a public dashboa
 
 ### Phase 10: Dashboard (week 12)
 
-- [ ] Pick a tool: Tableau Public (most recognized by recruiters), Power BI (common in corporate roles) or Streamlit (shows Python, hosts free)
-- [ ] Export the gold marts to Parquet or CSV on every pipeline run
-- [ ] Page 1, overview: an affordability ranking over time, a metro picker and headline numbers
-- [ ] Page 2, metro detail: a ZIP map of price growth, price vs. wage lines and the permits trend
-- [ ] Page 3, migration: a flow map of the top origins into each metro
-- [ ] Page 4, forecasts: left as a placeholder until Phase 15
-- [ ] Keep colors consistent: one color per metro on every chart, one sequential palette for maps
-- [ ] Show a data-as-of date and source notes on every page
-- [ ] Check the layout on a phone
+- [x] Pick a tool: Tableau Public (most recognized by recruiters), Power BI (common in corporate roles) or Streamlit (shows Python, hosts free)
+- [x] Export the gold marts to Parquet or CSV on every pipeline run
+- [x] Page 1, overview: an affordability ranking over time, a metro picker and headline numbers
+- [x] Page 2, metro detail: a ZIP map of price growth, price vs. wage lines and the permits trend
+- [x] Page 3, migration: a flow map of the top origins into each metro
+- [x] Page 4, forecasts: left as a placeholder until Phase 15
+- [x] Keep colors consistent: one color per metro on every chart, one sequential palette for maps (11 metros are too many distinct hues, so the selected metro is blue over the others in gray)
+- [x] Show a data-as-of date and source notes on every page
+- [x] Check the layout on a phone
 
 **Deliverable:** a public dashboard link. **Done when:** someone new can answer "which metro got least affordable?" in 30 seconds without help.
 

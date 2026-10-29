@@ -115,6 +115,7 @@ with right:
             hovermode="closest",
             yaxis_ticksuffix="×",
             margin={"l": 8, "r": 110, "t": 8, "b": 8},
+            xaxis_range=[m.month.min(), latest],  # the end label sits in the margin
         )
     )
 

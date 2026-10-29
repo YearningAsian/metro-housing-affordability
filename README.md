@@ -58,6 +58,16 @@ Every dbt test and its reason are in [data quality](docs/data_quality.md).
 
 The answers so far, each with its number, chart and caveats, are in the [findings log](docs/findings.md). The analysis notebooks (`notebooks/09_*.ipynb`) read only the gold marts; rerun them with `uv run jupyter nbconvert --to notebook --execute --inplace notebooks/09_*.ipynb`.
 
+## Dashboard
+
+A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (from Phase 15). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).
+
+```powershell
+uv run --group app streamlit run app/streamlit_app.py
+```
+
+Streamlit Community Cloud deploys it from this repo with `app/streamlit_app.py` as the entry point; it installs `app/requirements.txt`.
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).
@@ -88,7 +98,7 @@ Then put your Census, FRED and HUD keys in `.env`, and run:
 2. runs `.\tasks.ps1 pipeline`.
 3. pushes the state and the exports back to the bucket, only if the build passed.
 4. checks source freshness: a source with no new load past its limit fails the run.
-5. publishes the dbt docs to GitHub Pages.
+5. publishes the dbt docs to GitHub Pages, and the exports under `data/` for the dashboard.
 
 A failed scheduled run emails whoever last edited the workflow's `cron` line (GitHub's own notification; check Settings > Notifications > Actions). GitHub turns off scheduled workflows in a public repo after 60 days without repository activity.
 
