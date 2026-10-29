@@ -56,6 +56,8 @@ The warehouse layers, naming, grains and planned models are in the [warehouse de
 
 Every dbt test and its reason are in [data quality](docs/data_quality.md).
 
+The answers so far, each with its number, chart and caveats, are in the [findings log](docs/findings.md). The analysis notebooks (`notebooks/09_*.ipynb`) read only the gold marts; rerun them with `uv run jupyter nbconvert --to notebook --execute --inplace notebooks/09_*.ipynb`.
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).

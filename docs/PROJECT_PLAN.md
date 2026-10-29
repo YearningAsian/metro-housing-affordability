@@ -242,14 +242,14 @@ Part D answers the five questions with numbers and puts them in a public dashboa
 
 ### Phase 9: Exploratory analysis (weeks 10–11)
 
-- [ ] Write one notebook per question, reading only from the marts
-- [ ] Question 1: chart price-to-income by metro from 2015 to now and rank the biggest changes
-- [ ] Question 2: plot permits per 1,000 residents against price growth by metro, with a fitted line
-- [ ] Question 3: find each metro's top origin counties in the IRS data and compare their home values
-- [ ] Question 4: chart rent growth minus wage growth by metro
-- [ ] Question 5: compare what the fastest-rising ZIPs looked like a year before they took off; this feeds Phase 14
-- [ ] Test robustness: other start years, and inflation-adjusted values using CPI from FRED
-- [ ] Log each finding in `docs/findings.md`: one sentence, its number, its chart, its caveats
+- [x] Write one notebook per question, reading only from the marts
+- [x] Question 1: chart price-to-income by metro from 2015 to now and rank the biggest changes
+- [x] Question 2: plot permits per 1,000 residents against price growth by metro, with a fitted line
+- [x] Question 3: find each metro's top origin counties in the IRS data and compare their home values
+- [x] Question 4: chart rent growth minus wage growth by metro
+- [x] Question 5: compare what the fastest-rising ZIPs looked like a year before they took off; this feeds Phase 14
+- [x] Test robustness: other start years, and inflation-adjusted values using CPI from FRED
+- [x] Log each finding in `docs/findings.md`: one sentence, its number, its chart, its caveats
 
 **Deliverable:** notebooks and the findings log. **Done when:** each question has a one-sentence answer with a number.
 
