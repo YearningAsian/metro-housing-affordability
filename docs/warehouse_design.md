@@ -122,8 +122,8 @@ Known limits: Zillow and Redfin restate history, and only their latest release i
 | Intermediate (silver) | `int_spine`, `int_prices`, `int_rents`, `int_supply`, `int_wages`, `int_migration`, `int_income` |
 | Dimensions (gold) | `dim_date`, `dim_metro`, `dim_county`, `dim_zip` |
 | Facts (gold) | `fct_home_prices`, `fct_rents`, `fct_fair_market_rents`, `fct_market_activity`, `fct_permits`, `fct_wages`, `fct_migration`, `fct_income`, `fct_economy` |
-| Marts (gold) | `mart_metro_month`, `mart_zip_month`, `mart_migration_origins` (Phase 9: IRS inflows by origin county with both places' ZHVI); later `mart_zip_forecast` (a view over `ml.predictions`, Phase 12) |
-| ML | `ml.features_zip_month` (dbt, Phase 11), `ml.predictions` (written by the training code, Phase 12), `ml.zip_clusters` (written by `ml/clusters.py`, Phase 13: one row per ZIP and window end, September 2026 and December 2019), `ml.hot_zips` (written by `ml/hot_zips.py`, Phase 14: the latest month's hot-ZIP score, within-metro rank and flag per ZIP) |
+| Marts (gold) | `mart_metro_month`, `mart_zip_month`, `mart_migration_origins` (Phase 9: IRS inflows by origin county with both places' ZHVI); `mart_zip_forecast` (Phase 15: a view over `ml.predictions` with the actual outcome once known) |
+| ML | `ml.features_zip_month` (dbt, Phase 11), `ml.predictions` (written by `ml/train.py` in the monthly run, Phase 15: one row per ZIP and scored month with the growth forecast and hot-ZIP flag; created empty by dbt's on-run-start hook), `ml.zip_clusters` (written by `ml/clusters.py`, Phase 13: one row per ZIP and window end, September 2026 and December 2019) |
 
 The HUD ZIP-to-CBSA crosswalk and the CBSA shapes have no staging model: a dbt test reads the crosswalk from bronze as a cross-check of `dim_zip`, and the shapes stay in bronze for maps. `int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate goes through `int_wages`.
 
@@ -284,13 +284,12 @@ flowchart LR
         mart_metro_month
         mart_zip_month
         mart_migration_origins
-        mart_zip_forecast[mart_zip_forecast, Phase 12]
+        mart_zip_forecast
     end
     subgraph ml
         features[ml.features_zip_month]
         predictions[ml.predictions]
         clusters[ml.zip_clusters]
-        hot_zips[ml.hot_zips]
     end
 
     b_zillow --> s_zillow
@@ -355,5 +354,4 @@ flowchart LR
     features --> predictions
     predictions --> mart_zip_forecast
     mart_zip_month --> clusters
-    features --> hot_zips
 ```

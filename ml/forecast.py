@@ -4,8 +4,8 @@ Each quarter from 2022 is an origin t. Every model sees only what was published 
 LightGBM trains on the feature rows whose 12-month target was already known (month <= t - 12), and AutoETS on the
 metro series up to t. All models then forecast growth from t to t + 12 for every ZIP with a known outcome.
 
-Writes data/ml/backtest_zip.parquet, data/ml/backtest_metro.parquet, the final model data/ml/lgbm_growth_12m.txt
-and docs/figures/forecast_vs_actual.png, and prints the MAE tables for docs/forecast_report.md.
+Writes data/ml/backtest_zip.parquet, data/ml/backtest_metro.parquet and docs/figures/forecast_vs_actual.png, and
+prints the MAE tables for docs/forecast_report.md. The monthly model is fit and scored by ml/train.py.
 Run: uv run --group ml --group dev python -m ml.forecast [--report]   (--report: skip the backtest, reuse its output)
 """
 
@@ -49,7 +49,8 @@ PARAMS = {
 
 def load():
     con = duckdb.connect(str(ROOT / "data" / "warehouse.duckdb"), read_only=True)
-    zips = con.sql("select * from ml.features_zip_month").df()
+    # LightGBM bagging samples rows by position, so a fixed order keeps reruns identical
+    zips = con.sql("select * from ml.features_zip_month order by zip, month").df()
     metro = con.sql(
         "select cbsa_code, month, zhvi_usd, zori_usd from gold.mart_metro_month order by all"
     ).df()
@@ -230,10 +231,6 @@ def main():
         OUT.mkdir(parents=True, exist_ok=True)
         out.to_parquet(OUT / "backtest_zip.parquet")
         metro_out.to_parquet(OUT / "backtest_metro.parquet")
-        # the model a run on today's data would use
-        fit_lgbm(zips[zips.target_growth_12m.notna()], features(zips)).save_model(
-            OUT / "lgbm_growth_12m.txt"
-        )
 
     pd.set_option("display.width", 200)
     models = ["lgbm", "naive", "no_change", "ets"]

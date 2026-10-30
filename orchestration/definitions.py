@@ -1,7 +1,7 @@
-"""The monthly pipeline as Dagster assets: ingest -> dbt build -> export. GitHub Actions runs the same steps through
-tasks.ps1; this is the same flow with lineage and a UI. Run from the repo root:
+"""The monthly pipeline as Dagster assets: ingest -> dbt build -> retrain and score -> export. GitHub Actions runs the
+same steps through tasks.ps1; this is the same flow with lineage and a UI. Run from the repo root:
 
-    uv run --group orchestrate dagster dev -f orchestration/definitions.py
+    uv run --group orchestrate --group ml dagster dev -f orchestration/definitions.py
 """
 
 import json
@@ -38,7 +38,12 @@ sources = json.loads(Path(project.manifest_path).read_text(encoding="utf-8"))[
 
 
 @multi_asset(
-    specs=[AssetSpec([s["source_name"], s["name"]]) for s in sources],
+    # the ml source is ml.predictions, written by the predictions asset, not by ingest
+    specs=[
+        AssetSpec([s["source_name"], s["name"]])
+        for s in sources
+        if s["source_name"] != "ml"
+    ],
     group_name="ingest",
 )
 def bronze():
@@ -54,11 +59,27 @@ def dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build", "--full-refresh"], context=context).stream()
 
 
-MARTS = ["mart_metro_month", "mart_zip_month", "mart_migration_origins"]
+@asset(
+    deps=[get_asset_key_for_model([dbt_models], "features_zip_month")], group_name="ml"
+)
+def predictions():
+    """python -m ml.train: refit the models, score the latest month into ml.predictions, log to MLflow."""
+    from ml.train import main  # the ml group's packages load only when this runs
+
+    main()
+
+
+MARTS = [
+    "mart_metro_month",
+    "mart_zip_month",
+    "mart_migration_origins",
+    "mart_zip_forecast",
+]
 
 
 @asset(
-    deps=[get_asset_key_for_model([dbt_models], m) for m in MARTS], group_name="export"
+    deps=[get_asset_key_for_model([dbt_models], m) for m in MARTS] + [predictions],
+    group_name="export",
 )
 def mart_exports(dbt: DbtCliResource):
     """The gold marts as data/export/*.parquet, for the dashboard."""
@@ -77,7 +98,7 @@ def mart_exports(dbt: DbtCliResource):
 pipeline = define_asset_job("pipeline")
 
 defs = Definitions(
-    assets=[bronze, dbt_models, mart_exports],
+    assets=[bronze, dbt_models, predictions, mart_exports],
     jobs=[pipeline],
     schedules=[ScheduleDefinition(job=pipeline, cron_schedule="0 12 20 * *")],
     resources={"dbt": DbtCliResource(project_dir=project)},

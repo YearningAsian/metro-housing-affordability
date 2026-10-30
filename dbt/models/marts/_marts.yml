@@ -508,3 +508,30 @@ models:
         description: The study metro's Zillow ZHVI, average over move_year.
       - name: origin_to_metro_zhvi
         description: origin_zhvi_usd / metro_zhvi_usd; above 1 means movers came from a pricier county.
+
+  - name: mart_zip_forecast
+    description: >
+      One row per ZIP and month scored by the monthly model (ml.predictions, written by ml/train.py): the 12-month
+      ZHVI growth forecast with its 80% conformal band, the hot-ZIP score and flag, the ZIP's home value that month,
+      and the actual outcome once 12 months have passed. A view, so it shows the scores of the run after dbt build.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "zip || month"
+    columns:
+      - name: zip
+        description: 5-digit ZIP code.
+        data_tests: [not_null]
+      - name: month
+        description: The latest Zillow month when the ZIP was scored; the forecast is for month + 12.
+        data_tests: [not_null]
+      - name: growth_pred
+        description: Forecast ZHVI growth from month to month + 12, as a fraction.
+      - name: growth_lo
+        description: Lower end of the 80% band (LightGBM 10% quantile minus the conformal margin).
+      - name: growth_hi
+        description: Upper end of the 80% band (LightGBM 90% quantile plus the conformal margin).
+      - name: hot_flag
+        description: True when hot_score is in the top 20% of the metro's ZIPs that month.
+      - name: actual_growth_12m
+        description: What ZHVI growth turned out to be; null until month + 12 is published.

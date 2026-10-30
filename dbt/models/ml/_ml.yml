@@ -1,5 +1,18 @@
 version: 2
 
+sources:
+  - name: ml
+    description: Tables the Python training code writes into the warehouse.
+    schema: ml
+    tables:
+      - name: predictions
+        description: >
+          One row per ZIP and scored month, written by ml/train.py after dbt build (created empty by the
+          create_predictions on-run-start hook). A rerun in the same month replaces that month's rows; earlier months
+          are kept, so drift checks can compare them with outcomes once known. Columns: growth_pred, growth_lo and
+          growth_hi (12-month ZHVI growth, 80% conformal band), hot_score, hot_rank_pct and hot_flag (the hot-ZIP
+          classifier, flagged = top 20% of the metro), run_date, model_version (git commit) and mlflow_run_id.
+
 # ML: feature tables for the Phase 12-14 models, built point in time (see docs/warehouse_design.md).
 models:
   - name: features_zip_month

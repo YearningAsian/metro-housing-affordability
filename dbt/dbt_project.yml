@@ -7,6 +7,8 @@ model-paths: ["models"]
 macro-paths: ["macros"]
 test-paths: ["tests"]
 
+on-run-start: "{{ create_predictions() }}"
+
 models:
   metro_housing:
     +materialized: table

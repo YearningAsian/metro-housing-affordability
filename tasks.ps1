@@ -50,17 +50,22 @@ switch ($Task) {
     "ingest" { Invoke-Native uv run python -m ingest @Rest }
     # write the gold marts to data/export/*.parquet
     "export" { Export-Marts }
-    # the monthly run: ingest, build and test, export
+    # refit the models on every known outcome, score the latest month into ml.predictions, log to MLflow
+    "train" { Invoke-Native uv run --group ml python -m ml.train }
+    # the monthly run: ingest, build and test, retrain and score, export
     "pipeline" {
         Invoke-Native uv run python -m ingest
         # --full-refresh: rebuild incremental models in full, since sources restate past months
         Invoke-Native uv run dbt build --full-refresh @dbt
+        Invoke-Native uv run --group ml python -m ml.train
         Export-Marts
     }
-    # the state the pipeline keeps between runs: the load log in warehouse.duckdb and every bronze load. Raw
-    # downloads are not kept; bronze holds their content. pull-state overwrites the local warehouse.
+    # the state the pipeline keeps between runs: the load log and ml.predictions in warehouse.duckdb, every bronze
+    # load, and the MLflow runs. Raw downloads are not kept; bronze holds their content. pull-state overwrites the
+    # local warehouse.
     "pull-state" {
         Invoke-R2 sync r2:/bronze data/bronze
+        Invoke-R2 sync r2:/mlflow data/mlflow
         Invoke-R2 cp r2:/warehouse.duckdb data/warehouse.duckdb
         # the pulled bronze views point at the pushing machine's paths; census_geo is fetched once, so this run
         # downloads nothing and only rebuilds the views
@@ -71,9 +76,10 @@ switch ($Task) {
     # prune superseded copies before the bucket nears R2's 10 GB free tier
     "push-state" {
         Invoke-R2 sync data/bronze r2:/bronze
+        if (Test-Path data/mlflow) { Invoke-R2 sync data/mlflow r2:/mlflow }
         Invoke-R2 cp data/warehouse.duckdb r2:/warehouse.duckdb
         if (Test-Path data/export) { Invoke-R2 sync data/export r2:/export }
     }
     "test" { Invoke-Native uv run pytest }
-    default { Write-Host "Tasks: setup, lint, test, ingest [source ...], build, export, pipeline, pull-state, push-state, docs" }
+    default { Write-Host "Tasks: setup, lint, test, ingest [source ...], build, train, export, pipeline, pull-state, push-state, docs" }
 }

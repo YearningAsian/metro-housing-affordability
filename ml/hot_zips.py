@@ -5,15 +5,14 @@ before its period began: rows known by January 2023 for the 2023 validation mont
 2024-2025 test months. Models: last year's growth as a baseline score, logistic regression, and LightGBM with the
 positive class weighted 4:1. Explanations are LightGBM's TreeSHAP values (pred_contrib), in log-odds.
 
-Writes ml.hot_zips (the latest month's scores and flags), data/ml/lgbm_top20.txt, docs/figures/hot_zips_*.png, and
-prints the metrics for docs/hot_zips_report.md.
+Draws docs/figures/hot_zips_*.png and prints the metrics and the current top flags for docs/hot_zips_report.md. The
+monthly scores and flags go to ml.predictions through ml/train.py.
 Run: uv run --group ml --group dev python -m ml.hot_zips
 """
 
-import duckdb
 import pandas as pd
 
-from ml.forecast import OUT, ROOT, features, fit_lgbm, known_by, load
+from ml.forecast import ROOT, features, fit_lgbm, known_by, load
 
 TOP = 20  # flagged ZIPs per month for the headline precision
 WEIGHT = 4  # positive class weight: 80% negatives to 20% positives
@@ -185,16 +184,11 @@ def main():
         f"\nLightGBM precision, top 20% per metro, test, by metro\n{by_metro.rename(names).round(3).to_string()}"
     )
 
-    # the model a run on today's data uses, scoring the latest month
+    # the model the monthly run (ml/train.py) fits, scoring the latest month for the single-ZIP explanations
     model = fit_classifier(zips[zips.target_top20.notna()], cols)
-    OUT.mkdir(parents=True, exist_ok=True)
-    model.save_model(OUT / "lgbm_top20.txt")
     latest = zips[zips.month == zips.month.max()].copy()
     latest["score"] = model.predict(latest[cols])
-    latest["metro_rank_pct"] = latest.groupby("cbsa_code", observed=True).score.rank(
-        pct=True
-    )
-    latest["flagged"] = latest.metro_rank_pct > 0.8
+    latest["flagged"] = flag(latest, "score")
     imp, explained = charts(test, test_model, model, cols, latest, names)
     print(f"\nmean |SHAP|, test\n{imp.round(3).to_string()}")
     for z, metro, score, base, s in explained:
@@ -202,21 +196,7 @@ def main():
             f"\nZIP {z} ({metro}), score {score:.3f}, base value {base:.3f}\n{s.round(3).to_string()}"
         )
 
-    hot = latest.assign(cbsa_code=latest.cbsa_code.astype(str))[
-        [
-            "zip",
-            "cbsa_code",
-            "month",
-            "prediction_date",
-            "score",
-            "metro_rank_pct",
-            "flagged",
-        ]
-    ]
-    con = duckdb.connect(str(ROOT / "data" / "warehouse.duckdb"))
-    con.execute("create schema if not exists ml")
-    con.execute("create or replace table ml.hot_zips as select * from hot")
-    con.close()
+    hot = latest.assign(cbsa_code=latest.cbsa_code.astype(str))
     top = hot[hot.flagged].sort_values("score", ascending=False)
     print(
         f"\n{hot.flagged.sum()} of {len(hot)} ZIPs flagged for {hot.month.max():%b %Y}; top 5 per metro:"

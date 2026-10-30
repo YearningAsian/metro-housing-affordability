@@ -1,5 +1,6 @@
-# Monthly refresh: pull state from R2, ingest, dbt build, export, push state back, publish dbt docs and the exports.
-# A failed scheduled run emails whoever last changed the cron line (GitHub's own notification).
+# Monthly refresh: pull state from R2, ingest, dbt build, retrain and score, export, push state back, publish dbt
+# docs and the exports. A failed scheduled run emails whoever last changed the cron line (GitHub's own
+# notification); forecast drift fails the alert job after the rest is published.
 name: pipeline
 
 on:
@@ -19,6 +20,8 @@ jobs:
   pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      drift: ${{ steps.pipeline.outputs.drift }}
     defaults:
       run:
         shell: pwsh
@@ -26,7 +29,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0
       # secrets go only to the steps that use them, never to package installs
-      - run: uv sync --frozen --python 3.12
+      - run: uv sync --frozen --python 3.12 --group ml
       - run: uv run dbt deps --project-dir dbt --profiles-dir dbt
       - run: ./tasks.ps1 pull-state
         env: &r2
@@ -34,7 +37,9 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
-      - run: ./tasks.ps1 pipeline
+      # ml/train.py writes drift=true to this step's outputs when matured forecasts miss by more than the backtest
+      - id: pipeline
+        run: ./tasks.ps1 pipeline
         env:
           CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -66,3 +71,13 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v5
+
+  # a failed job emails, so drift reaches someone; the new scores are already published by then
+  alert:
+    needs: [pipeline, docs]
+    if: needs.pipeline.outputs.drift == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::Forecast drift: matured 12-month forecasts missed by more than the backtest's worst origin. See the pipeline job log and docs/model_card.md."
+          exit 1

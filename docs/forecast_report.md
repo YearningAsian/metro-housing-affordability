@@ -5,7 +5,7 @@ simple baselines in a rolling-origin backtest on data through September 2026. Th
 [`ml/forecast.py`](../ml/forecast.py); rerun it with `uv run --group ml --group dev python -m ml.forecast` after a
 pipeline run, then update the numbers here.
 
-**Answer:** LightGBM beats the naive baseline on the test period, but only just: 3.62 against 3.68 percentage points
+**Answer:** LightGBM beats the naive baseline on the test period, but only just: 3.63 against 3.68 percentage points
 of mean absolute error. A plain no-change forecast (2.84) and metro AutoETS (3.15) both beat it. LightGBM is the best
 model at ranking ZIPs within their metro; it loses on the metro-wide level, where 2024–2025 brought a turn that
 none of its training years showed.
@@ -34,21 +34,21 @@ ZIP-level MAE of 12-month growth, in percentage points (lower is better):
 
 | Metro | LightGBM | Naive | No change | Metro ETS |
 | --- | --- | --- | --- | --- |
-| Atlanta | 4.18 | 4.14 | **2.81** | 3.26 |
-| Austin | **1.94** | 2.54 | 4.55 | 2.66 |
-| Charlotte | 3.50 | 3.54 | **2.05** | 2.44 |
-| Dallas-Fort Worth | 3.04 | 3.31 | 2.97 | **2.78** |
-| Denver | 3.07 | 2.79 | 2.44 | **2.27** |
-| Nashville | 2.45 | 2.51 | 2.37 | **2.32** |
-| Orlando | 4.18 | 4.09 | **2.82** | 3.14 |
-| Phoenix | 3.78 | 3.89 | **2.43** | 2.74 |
-| Raleigh | 2.96 | 3.08 | **1.67** | 1.94 |
-| Seattle | 4.52 | 4.50 | **2.35** | 5.58 |
+| Atlanta | 4.21 | 4.14 | **2.81** | 3.26 |
+| Austin | **1.89** | 2.54 | 4.55 | 2.66 |
+| Charlotte | 3.54 | 3.54 | **2.05** | 2.44 |
+| Dallas-Fort Worth | 2.99 | 3.31 | 2.97 | **2.78** |
+| Denver | 3.03 | 2.79 | 2.44 | **2.27** |
+| Nashville | 2.41 | 2.51 | 2.37 | **2.32** |
+| Orlando | 4.20 | 4.09 | **2.82** | 3.14 |
+| Phoenix | 3.87 | 3.89 | **2.43** | 2.74 |
+| Raleigh | 2.98 | 3.08 | **1.67** | 1.94 |
+| Seattle | 4.63 | 4.50 | **2.35** | 5.58 |
 | Tampa | 5.13 | 5.09 | 4.40 | **4.15** |
-| **All (test, 2024–2025)** | 3.62 | 3.68 | **2.84** | 3.15 |
-| All (validation, 2023) | **3.22** | 5.46 | 3.39 | 3.82 |
+| **All (test, 2024–2025)** | 3.63 | 3.68 | **2.84** | 3.15 |
+| All (validation, 2023) | **3.16** | 5.46 | 3.39 | 3.82 |
 
-LightGBM beats naive in 6 of 11 metros on test, and every model in Austin. In validation it beat every baseline.
+LightGBM beats naive in 6 of 11 metros on test (Charlotte by under 0.01), and every model in Austin. In validation it beat every baseline.
 
 ### Why LightGBM does not win the test period
 
@@ -57,7 +57,7 @@ within-metro part (each ZIP's gap from its metro average):
 
 | Test, 2024–2025 | Metro-wide part | Within-metro part |
 | --- | --- | --- |
-| LightGBM | 3.36 | **1.58** |
+| LightGBM | 3.37 | **1.57** |
 | Naive | 3.31 | 1.74 |
 | No change | **2.23** | 1.78 |
 | Metro ETS | 2.57 | 1.78 |
@@ -74,11 +74,11 @@ origins:
 
 | Mortgage feature | Validation MAE | Test MAE |
 | --- | --- | --- |
-| Rate level (the model above) | 3.22 | **3.62** |
+| Rate level (the model above) | 3.16 | **3.63** |
 | None | 6.25 | 6.58 |
 | 12-month change in the rate | **2.92** | 5.57 |
 
-Dropping the rate makes everything worse, so rates matter. Validation prefers the 12-month change, which then does far
+The other two rows were run before a row-order fix that moved the main model's MAE by up to 0.06; the gaps are far larger. Dropping the rate makes everything worse, so rates matter. Validation prefers the 12-month change, which then does far
 worse on test. Choosing by validation would have picked the worse model; the reported model stays the one fixed before
 any test result was seen. One validation year cannot pick features across market regimes.
 
@@ -112,8 +112,8 @@ percentiles, and each origin widens that band by the 80% quantile of earlier mis
 
 | Test, 2024–2025 | Coverage (target 80%) | Mean width |
 | --- | --- | --- |
-| Quantile models alone | 33% | 4.4 pp |
-| After CQR | 95% | 16.0 pp |
+| Quantile models alone | 32% | 4.3 pp |
+| After CQR | 94% | 15.6 pp |
 
 The quantile models alone are far too narrow, the same regime problem as above. CQR restores coverage, but it
 calibrates on 2022–2023 misses, which were larger, so it over-covers and the band is too wide to be useful for a
@@ -141,7 +141,8 @@ the median ZIP's 80% interval bound after CQR.
   more year of data could reorder the models.
 - No tuning: parameters were fixed before the backtest. The feature check above shows why tuning on one validation
   year would not be trusted anyway.
-- The model is not yet retrained on a schedule or written to `ml.predictions`; that is Phase 15.
+- Since Phase 15 the model is refit and scored monthly into `ml.predictions` by `ml/train.py`; see the
+  [model card](model_card.md).
 
 ## Takeaways for later phases
 

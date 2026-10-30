@@ -322,13 +322,13 @@ Part E adds three models that each have to beat a simple baseline on data they n
 
 ### Phase 15: MLOps (week 17)
 
-- [ ] Track runs, parameters, metrics and artifacts in MLflow
-- [ ] Package training as `make train` with pinned versions and fixed random seeds
-- [ ] Add monthly retrain and scoring to the GitHub Actions workflow, after `dbt build`
-- [ ] Write predictions to `ml.predictions` with model version and run date, exposed through a dbt model
-- [ ] Compare last month's predictions with new actuals and alert when error drifts above the backtest level
-- [ ] Fill the dashboard's forecast page
-- [ ] Write `docs/model_card.md`: data, metrics, known limits
+- [x] Track runs, parameters, metrics and artifacts in MLflow
+- [x] Package training as `make train` with pinned versions and fixed random seeds
+- [x] Add monthly retrain and scoring to the GitHub Actions workflow, after `dbt build`
+- [x] Write predictions to `ml.predictions` with model version and run date, exposed through a dbt model
+- [x] Compare last month's predictions with new actuals and alert when error drifts above the backtest level
+- [x] Fill the dashboard's forecast page
+- [x] Write `docs/model_card.md`: data, metrics, known limits
 
 **Deliverable:** automated retraining and scoring. **Done when:** a scheduled run produces new predictions that show up in the dashboard.
 

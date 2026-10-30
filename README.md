@@ -62,11 +62,13 @@ The [forecast backtest](docs/forecast_report.md) compares a LightGBM model of 12
 
 The [neighborhood clusters](docs/clusters_report.md) group the study ZIPs into six named types by their last 12 months of prices, rents, permits, sales speed and migration (`ml.zip_clusters`), and track how ZIPs moved since 2019. Rerun them with `uv run --group ml --group dev python -m ml.clusters`.
 
-The [hot-ZIP classifier](docs/hot_zips_report.md) flags the ZIPs most likely to land in their metro's top 20% of home value growth over the next 12 months, explained with SHAP (`ml.hot_zips`). It describes market signals, is not investment advice, and fast price growth often means displacement. Rerun it with `uv run --group ml --group dev python -m ml.hot_zips`.
+The [hot-ZIP classifier](docs/hot_zips_report.md) flags the ZIPs most likely to land in their metro's top 20% of home value growth over the next 12 months, explained with SHAP. It describes market signals, is not investment advice, and fast price growth often means displacement. Rerun it with `uv run --group ml --group dev python -m ml.hot_zips`.
+
+Each monthly pipeline run refits both models on every known outcome, scores the latest month into `ml.predictions` (exposed as `gold.mart_zip_forecast`), logs the run to MLflow in `data/mlflow`, and fails an alert job when matured forecasts drift past the backtest's error. Run it alone with `.\tasks.ps1 train`. What the models are, how they scored and where they fail: the [model card](docs/model_card.md).
 
 ## Dashboard
 
-A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (from Phase 15). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).
+A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (each ZIP's 12-month forecast and hot-ZIP flag from the monthly model). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).
 
 ```powershell
 uv run --group app streamlit run app/streamlit_app.py
