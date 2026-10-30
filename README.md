@@ -58,6 +58,8 @@ Every dbt test and its reason are in [data quality](docs/data_quality.md).
 
 The answers so far, each with its number, chart and caveats, are in the [findings log](docs/findings.md). The analysis notebooks (`notebooks/09_*.ipynb`) read only the gold marts; rerun them with `uv run jupyter nbconvert --to notebook --execute --inplace notebooks/09_*.ipynb`.
 
+The [forecast backtest](docs/forecast_report.md) compares a LightGBM model of 12-month ZIP home value growth with simple baselines, on point-in-time features (`ml.features_zip_month`). Rerun it with `uv run --group ml --group dev python -m ml.forecast`.
+
 ## Dashboard
 
 A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (from Phase 15). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).

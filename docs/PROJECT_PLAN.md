@@ -288,13 +288,13 @@ Part E adds three models that each have to beat a simple baseline on data they n
 
 ### Phase 12: Price and rent forecasting (weeks 14–15)
 
-- [ ] Set baselines: naive (last year's growth continues) and seasonal naive
-- [ ] Fit a statistical model per metro, ETS or ARIMA, with `statsforecast`
-- [ ] Fit one global LightGBM model across all ZIPs on the feature table
-- [ ] Backtest with a rolling origin: refit each quarter, forecast 12 months ahead
-- [ ] Report MAE of growth by metro, always next to the baseline's
-- [ ] Add prediction intervals with quantile regression or conformal prediction
-- [ ] Chart forecast vs. actual with intervals for 2–3 metros, and point out the misses
+- [x] Set baselines: naive (last year's growth continues) and seasonal naive
+- [x] Fit a statistical model per metro, ETS or ARIMA, with `statsforecast`
+- [x] Fit one global LightGBM model across all ZIPs on the feature table
+- [x] Backtest with a rolling origin: refit each quarter, forecast 12 months ahead
+- [x] Report MAE of growth by metro, always next to the baseline's
+- [x] Add prediction intervals with quantile regression or conformal prediction
+- [x] Chart forecast vs. actual with intervals for 2–3 metros, and point out the misses
 
 **Deliverable:** the forecast model and a backtest report. **Done when:** LightGBM beats the naive baseline on the test period, or the report explains why it does not.
 

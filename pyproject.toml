@@ -24,6 +24,10 @@ dev = [
     "ruff>=0.17.3",
     "sqlfluff>=4.4.0",
 ]
+ml = [
+    "lightgbm>=4.7.0",
+    "statsforecast>=2.0.3",
+]
 orchestrate = [
     "dagster==1.13.26",
     "dagster-dbt==0.29.26",
