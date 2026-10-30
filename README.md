@@ -2,6 +2,38 @@
 
 > Work in progress. See the [project plan](docs/PROJECT_PLAN.md).
 
+## Summary
+
+A monthly pipeline pulls 11 free public sources (Zillow, Redfin, Census, BLS, FRED, IRS, HUD) for 11 fast-growing US
+metros and 1,436 ZIP codes, January 2015 to September 2026. Python loaders write bronze Parquet; dbt on DuckDB builds
+tested silver tables and gold marts; LightGBM models forecast ZIP growth and flag likely hot ZIPs, logged to MLflow;
+GitHub Actions reruns everything on the 20th of each month, keeps state in Cloudflare R2, and publishes the exports to
+GitHub Pages for a Streamlit dashboard.
+
+What the data says (details and caveats in the [findings log](docs/findings.md)):
+
+- **Every metro got less affordable.** Price-to-income rose in all 11 metros since 2015: Seattle by 1.44 years of
+  median income (4.9 to 6.3), Austin by only 0.04 after giving back its 2022 spike.
+- **Rents outgrew wages in 6 of 11 metros.** Atlanta's rents rose 81% against wages' 53% (+28 points); in Austin wages
+  led by 44 points.
+- **Austin is the supply story.** It permitted the most housing (15.4 units per 1,000 residents a year) and had the
+  slowest home value growth (+57%). Across all metros permits correlate with slower growth (r = −0.55), but without
+  Austin the link nearly vanishes (r = −0.10).
+- **Hot ZIPs were already rising a year earlier.** Their past growth sat 0.74 standard deviations above their metro;
+  picking the top fifth on that measure finds next year's hot ZIPs 44% of the time, against a 20% base rate.
+
+What the models can and cannot do (details in the [model card](docs/model_card.md)):
+
+- The 12-month forecast ranks ZIPs within a metro better than any baseline (error 1.57 points), but a plain no-change
+  guess beats it overall in 2024–2025 (2.84 against 3.63), because the market flattened in a way no training year had.
+- Every hot-ZIP model doubles the 20% base rate. LightGBM has the best PR-AUC (0.342 against 0.301 for momentum), but
+  momentum is still more precise on the published top-20%-per-metro rule (0.443 against 0.405).
+- Neither model beats its strongest simple baseline on every measure, so the dashboard shows both as within-metro
+  rankings, not price targets. Not investment advice.
+
+Slide-sized charts for these findings are in [`docs/figures/deck/`](docs/figures/deck/); rebuild them with
+`uv run python notebooks/deck_charts.py`.
+
 ## The question
 
 Where in fast-growing US metros is housing still affordable, and which signals show up before prices jump?

@@ -340,11 +340,11 @@ Part F turns the work into a deck, a 6–8 minute video and a public launch. Rec
 
 ### Phase 16: Findings and slide deck (week 18)
 
-- [ ] Choose the 4–5 strongest findings from `docs/findings.md`
-- [ ] Give each one slide: one chart and a headline that states the finding with its number
-- [ ] Order about 12 slides: hook, question, metros and data, architecture, findings, ML results, limits and next steps, links
-- [ ] Re-export charts at 1920×1080 with large labels, so they read on a phone
-- [ ] Write a one-page summary for the README
+- [x] Choose the 4–5 strongest findings from `docs/findings.md`
+- [x] Give each one slide: one chart and a headline that states the finding with its number
+- [x] Order about 12 slides: hook, question, metros and data, architecture, findings, ML results, limits and next steps, links
+- [x] Re-export charts at 1920×1080 with large labels, so they read on a phone
+- [x] Write a one-page summary for the README
 
 **Deliverable:** the deck. **Done when:** each headline makes sense with the chart hidden.
 
