@@ -1,6 +1,6 @@
 # Monthly refresh: pull state from R2, ingest, dbt build, retrain and score, export, push state back, publish dbt
 # docs and the exports. A failed scheduled run emails whoever last changed the cron line (GitHub's own
-# notification); forecast drift fails the alert job after the rest is published.
+# notification); forecast drift or a stale source fails the alert job after the rest is published.
 name: pipeline
 
 on:
@@ -22,12 +22,13 @@ jobs:
     timeout-minutes: 120
     outputs:
       drift: ${{ steps.pipeline.outputs.drift }}
+      stale: ${{ steps.freshness.outcome == 'failure' }}
     defaults:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       # secrets go only to the steps that use them, never to package installs
       - run: uv sync --frozen --python 3.12 --group ml
       - run: uv run dbt deps --project-dir dbt --profiles-dir dbt
@@ -47,15 +48,17 @@ jobs:
       # only after a clean build, so a bad load never becomes the next run's starting point
       - run: ./tasks.ps1 push-state
         env: *r2
-      # after push-state, so new loads are kept; a source with no new load past its limit fails the run (and emails)
-      - run: uv run dbt source freshness --project-dir dbt --profiles-dir dbt
+      # after push-state, so new loads are kept; a stale source must not block the publish, so the alert job fails instead
+      - id: freshness
+        continue-on-error: true
+        run: uv run dbt source freshness --project-dir dbt --profiles-dir dbt
       - run: |
           uv run dbt docs generate --static --project-dir dbt --profiles-dir dbt
           New-Item -ItemType Directory site | Out-Null
           Copy-Item dbt/target/static_index.html site/index.html
       # the dashboard reads the exports from Pages: <pages url>/data/<file>
       - run: Copy-Item -Recurse data/export site/data
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
 
@@ -70,14 +73,29 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
-  # a failed job emails, so drift reaches someone; the new scores are already published by then
+  # a failed job emails, so drift or a stale source reaches someone; the new scores are already published by then
   alert:
     needs: [pipeline, docs]
-    if: needs.pipeline.outputs.drift == 'true'
+    if: needs.pipeline.outputs.drift == 'true' || needs.pipeline.outputs.stale == 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - if: needs.pipeline.outputs.drift == 'true'
+        run: |
           echo "::error::Forecast drift: matured 12-month forecasts missed by more than the backtest's worst origin. See the pipeline job log and docs/model_card.md."
-          exit 1
+      - if: needs.pipeline.outputs.stale == 'true'
+        run: |
+          echo "::error::Stale source: dbt source freshness failed. See the freshness step in the pipeline job log."
+      - run: exit 1
+
+  # GitHub disables a public repo's schedule after 60 days without activity; re-enabling each run resets that clock
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow enable pipeline.yml --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -137,10 +137,12 @@ Then put your Census, FRED and HUD keys in `.env`, and run:
 1. pulls the state from a private Cloudflare R2 bucket: `warehouse.duckdb` (with the load log) and every bronze load in `data/bronze`. Raw downloads are not kept; bronze holds their content.
 2. runs `.\tasks.ps1 pipeline`.
 3. pushes the state and the exports back to the bucket, only if the build passed.
-4. checks source freshness: a source with no new load past its limit fails the run.
+4. checks source freshness. A source with no new load past its limit does not block the publish; it fails the `alert` job afterwards.
 5. publishes the dbt docs to GitHub Pages, and the exports under `data/` for the dashboard.
 
-A failed scheduled run emails whoever last edited the workflow's `cron` line (GitHub's own notification; check Settings > Notifications > Actions). GitHub turns off scheduled workflows in a public repo after 60 days without repository activity.
+A failed scheduled run emails whoever last edited the workflow's `cron` line (GitHub's own notification; check Settings > Notifications > Actions). GitHub turns off scheduled workflows in a public repo after 60 days without repository activity, so each scheduled run's `keepalive` job re-enables the workflow. If it is ever off, turn it back on with `gh workflow enable pipeline.yml`.
+
+[`.github/workflows/test.yml`](.github/workflows/test.yml) runs pre-commit and pytest on every push and pull request.
 
 One-time setup:
 
