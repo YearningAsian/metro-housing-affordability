@@ -311,12 +311,12 @@ Part E adds three models that each have to beat a simple baseline on data they n
 
 ### Phase 14: Hot-ZIP classifier with SHAP (week 16)
 
-- [ ] Predict whether a ZIP lands in its metro's top 20% of price growth over the next 12 months
-- [ ] Start with logistic regression, then LightGBM with class weights
-- [ ] Evaluate on the time-based test set: precision among the top 20 flagged ZIPs, PR-AUC, a calibration curve
-- [ ] Explain with SHAP: one global importance chart and 2–3 single-ZIP explanations
-- [ ] Publish the ZIPs flagged for the next 12 months, with caveats
-- [ ] Add a note that the model describes market signals, is not investment advice, and that fast price growth often means displacement
+- [x] Predict whether a ZIP lands in its metro's top 20% of price growth over the next 12 months
+- [x] Start with logistic regression, then LightGBM with class weights
+- [x] Evaluate on the time-based test set: precision among the top 20 flagged ZIPs, PR-AUC, a calibration curve
+- [x] Explain with SHAP: one global importance chart and 2–3 single-ZIP explanations
+- [x] Publish the ZIPs flagged for the next 12 months, with caveats
+- [x] Add a note that the model describes market signals, is not investment advice, and that fast price growth often means displacement
 
 **Deliverable:** the classifier and SHAP charts. **Done when:** precision among flagged ZIPs clearly beats the 20% base rate.
 

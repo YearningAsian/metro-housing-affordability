@@ -62,6 +62,8 @@ The [forecast backtest](docs/forecast_report.md) compares a LightGBM model of 12
 
 The [neighborhood clusters](docs/clusters_report.md) group the study ZIPs into six named types by their last 12 months of prices, rents, permits, sales speed and migration (`ml.zip_clusters`), and track how ZIPs moved since 2019. Rerun them with `uv run --group ml --group dev python -m ml.clusters`.
 
+The [hot-ZIP classifier](docs/hot_zips_report.md) flags the ZIPs most likely to land in their metro's top 20% of home value growth over the next 12 months, explained with SHAP (`ml.hot_zips`). It describes market signals, is not investment advice, and fast price growth often means displacement. Rerun it with `uv run --group ml --group dev python -m ml.hot_zips`.
+
 ## Dashboard
 
 A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (from Phase 15). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).

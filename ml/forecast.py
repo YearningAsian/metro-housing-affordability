@@ -82,10 +82,10 @@ def conformal_margin(scores):
     return np.quantile(scores, min(1.0, np.ceil((n + 1) * COVERAGE) / n)) if n else 0.0
 
 
-def fit_lgbm(train, cols, objective="regression", **params):
+def fit_lgbm(train, cols, objective="regression", label="target_growth_12m", **params):
     import lightgbm as lgb
 
-    data = lgb.Dataset(train[cols], train.target_growth_12m)
+    data = lgb.Dataset(train[cols], train[label].astype(float))
     return lgb.train(
         {**PARAMS, "objective": objective, **params}, data, num_boost_round=ROUNDS
     )
