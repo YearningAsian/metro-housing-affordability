@@ -300,12 +300,12 @@ Part E adds three models that each have to beat a simple baseline on data they n
 
 ### Phase 13: Neighborhood clustering (week 15)
 
-- [ ] Summarize each ZIP's last 12 months: price growth, price-to-income, permits per capita, days on market, rent growth, net migration
-- [ ] Standardize the features; run k-means for k = 3 to 8 and choose by silhouette score and how readable the groups are
-- [ ] Cross-check with a Gaussian mixture or HDBSCAN
-- [ ] Name each cluster by its profile, such as "hot and supply-constrained" or "affordable and growing"
-- [ ] Chart a cluster map per metro, plus the share of ZIPs in each cluster by metro
-- [ ] Track how ZIPs moved between clusters from 2019 to now
+- [x] Summarize each ZIP's last 12 months: price growth, price-to-income, permits per capita, days on market, rent growth, net migration
+- [x] Standardize the features; run k-means for k = 3 to 8 and choose by silhouette score and how readable the groups are
+- [x] Cross-check with a Gaussian mixture or HDBSCAN
+- [x] Name each cluster by its profile, such as "hot and supply-constrained" or "affordable and growing"
+- [x] Chart a cluster map per metro, plus the share of ZIPs in each cluster by metro
+- [x] Track how ZIPs moved between clusters from 2019 to now
 
 **Deliverable:** a cluster label table. **Done when:** every cluster has a name and a one-line profile.
 
