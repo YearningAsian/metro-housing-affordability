@@ -10,6 +10,18 @@ tested silver tables and gold marts; LightGBM models forecast ZIP growth and fla
 GitHub Actions reruns everything on the 20th of each month, keeps state in Cloudflare R2, and publishes the exports to
 GitHub Pages for a Streamlit dashboard.
 
+```mermaid
+flowchart LR
+    src["11 public sources<br/>Zillow, Redfin, Census, BLS,<br/>FRED, IRS, HUD"] --> bronze["Python loaders<br/>bronze Parquet"]
+    bronze --> dbt["dbt on DuckDB<br/>silver tables, gold marts"]
+    dbt --> ml["LightGBM forecast<br/>and hot-ZIP flags<br/>(MLflow)"]
+    ml --> dbt
+    dbt --> pages["GitHub Pages<br/>exports and dbt docs"]
+    pages --> app["Streamlit dashboard"]
+    gha["GitHub Actions, 20th of each month"] -.-> bronze
+    r2[("Cloudflare R2<br/>warehouse state")] <-.-> gha
+```
+
 What the data says (details and caveats in the [findings log](docs/findings.md)):
 
 - **Every metro got less affordable.** Price-to-income rose in all 11 metros since 2015: Seattle by 1.44 years of
@@ -32,7 +44,9 @@ What the models can and cannot do (details in the [model card](docs/model_card.m
   rankings, not price targets. Not investment advice.
 
 Slide-sized charts for these findings are in [`docs/figures/deck/`](docs/figures/deck/); rebuild them with
-`uv run python notebooks/deck_charts.py`.
+`uv run python notebooks/deck_charts.py`. The video script is [`docs/video_script.md`](docs/video_script.md); its
+bar chart race renders to `data/video/` with `uv run python notebooks/bar_race.py` (add `--vertical` for the phone
+cut; needs ffmpeg).
 
 ## The question
 

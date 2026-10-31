@@ -362,7 +362,7 @@ Run of show, about 7 minutes:
 - [ ] Write the script at about 140 words a minute, read it aloud, then cut 20%
 - [ ] Record screen and voice with OBS Studio or Loom and a USB microphone
 - [ ] Show the live dashboard for 30–60 seconds
-- [ ] Animate the affordability ranking as a bar chart race (Flourish or a matplotlib animation)
+- [x] Animate the affordability ranking as a bar chart race (Flourish or a matplotlib animation)
 - [ ] Edit in DaVinci Resolve or CapCut and add captions
 - [ ] Upload to YouTube with chapters; cut a 60-second vertical version for LinkedIn
 
