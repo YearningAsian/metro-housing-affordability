@@ -371,7 +371,7 @@ Run of show, about 7 minutes:
 ### Phase 18: Portfolio launch (week 20)
 
 - [ ] Finish the README: problem, architecture image, how to run, findings, links to dashboard, video and model card
-- [ ] Clean the repo: license, passing-tests badge, no secrets in git history, a small sample dataset for a quick demo
+- [x] Clean the repo: license, passing-tests badge, no secrets in git history, a small sample dataset for a quick demo
 - [ ] Publish a write-up on Medium, Substack or a personal site
 - [ ] Post on LinkedIn with the short cut and the strongest chart
 - [ ] Add 2–3 resume bullets with real numbers: sources, metros, refresh cadence, how much the forecast beat its baseline

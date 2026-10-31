@@ -1,6 +1,15 @@
 # Metro Housing Affordability
 
-> Work in progress. See the [project plan](docs/PROJECT_PLAN.md).
+[![test](https://github.com/YearningAsian/metro-housing-affordability/actions/workflows/test.yml/badge.svg)](https://github.com/YearningAsian/metro-housing-affordability/actions/workflows/test.yml)
+[![pipeline](https://github.com/YearningAsian/metro-housing-affordability/actions/workflows/pipeline.yml/badge.svg)](https://github.com/YearningAsian/metro-housing-affordability/actions/workflows/pipeline.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Since 2015, a home in every one of 11 fast-growing US metros takes more years of income to buy. This project tracks
+where and how fast, which signals came first, and which ZIP codes are likely to rise next, from free public data
+refreshed every month.
+
+[Findings](docs/findings.md) · [Model card](docs/model_card.md) · [dbt docs](https://yearningasian.github.io/metro-housing-affordability/) ·
+[Write-up](docs/writeup.md) · [Video script](docs/video_script.md) · [Quick demo](#quick-demo)
 
 ## Summary
 
@@ -122,6 +131,24 @@ uv run --group app streamlit run app/streamlit_app.py
 
 Streamlit Community Cloud deploys it from this repo with `app/streamlit_app.py` as the entry point; it installs `app/requirements.txt`.
 
+## Quick demo
+
+No API keys and no pipeline run: the dashboard reads the published exports. Needs [uv](https://docs.astral.sh/uv/).
+
+```powershell
+git clone https://github.com/YearningAsian/metro-housing-affordability
+cd metro-housing-affordability
+.\tasks.ps1 setup
+uv run --group app streamlit run app/streamlit_app.py
+```
+
+Offline, point it at the two-metro sample in [`sample/`](sample/) (Seattle and Austin, every column of the real
+exports; rebuild it with `uv run python app/make_sample.py`):
+
+```powershell
+$env:DATA_URL = "sample"; uv run --group app streamlit run app/streamlit_app.py
+```
+
 ## Setup (Windows PowerShell)
 
 Needs [uv](https://docs.astral.sh/uv/).
@@ -170,3 +197,8 @@ The same flow runs as Dagster assets (ingest, every dbt model with its tests, th
 ```powershell
 uv run --group orchestrate dagster dev -f orchestration/definitions.py   # http://localhost:3000
 ```
+
+## License
+
+Code under the [MIT License](LICENSE). The data belongs to its publishers and follows their terms; this repo holds
+none of it except the small sample in `sample/`.

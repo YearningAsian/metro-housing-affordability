@@ -10,7 +10,8 @@ import pandas as pd
 import streamlit as st
 
 LOCAL = Path(__file__).resolve().parent.parent / "data" / "export"
-# the monthly pipeline publishes data/export to GitHub Pages
+# the monthly pipeline publishes data/export to GitHub Pages; DATA_URL may also be a
+# folder, such as the two-metro demo in sample/
 REMOTE = os.environ.get(
     "DATA_URL", "https://yearningasian.github.io/metro-housing-affordability/data"
 )
@@ -26,10 +27,11 @@ def load(name):
     """One export: the local copy when the pipeline ran on this machine, else the
     published one."""
     path = LOCAL / name
+    src = path if path.exists() else f"{REMOTE}/{name}"
     if name.endswith(".geojson"):
-        with path.open() if path.exists() else urlopen(f"{REMOTE}/{name}") as f:
+        with urlopen(src) if str(src).startswith("http") else open(src) as f:
             return json.load(f)
-    df = pd.read_parquet(path if path.exists() else f"{REMOTE}/{name}")
+    df = pd.read_parquet(src)
     if "month" in df:
         df["month"] = pd.to_datetime(df["month"])
     return df
