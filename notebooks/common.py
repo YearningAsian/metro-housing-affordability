@@ -75,6 +75,30 @@ def price_to_income_change(start_year=2015):
     return d.sort_values("change", ascending=False)
 
 
+def mortgage_share_change(start_year=2015, down=0.10):
+    """Per metro: monthly principal and interest on the typical home (ZHVI, `down` paid
+    up front, 30-year fixed at that month's rate) over median household income / 12,
+    as the start year's average against the latest 12 months'. Leaves out taxes and
+    insurance; ACS income lags about 2 years, so recent shares run a little high."""
+    d = q(
+        """
+        with m as (
+            select cbsa_code, month, mortgage_rate_pct / 1200 r,
+                (1 - $down) * zhvi_usd * r / (1 - pow(1 + r, -360)) / (median_household_income_usd / 12) share
+            from gold.mart_metro_month
+        )
+        select cbsa_code,
+            avg(share) filter (year(month) = $y) start_share,
+            avg(share) filter (month > $latest - interval 12 month and month <= $latest) latest_share
+        from m group by all
+        """,
+        {"y": start_year, "latest": LATEST, "down": down},
+    )
+    d["change"] = d.latest_share - d.start_share
+    d.index = d.pop("cbsa_code").map(METRO).rename("metro")
+    return d.sort_values("latest_share", ascending=False)
+
+
 def permits_vs_growth(permit_years=(2016, 2025), growth_years=(2015, 2025)):
     """Per metro: average yearly permits per 1,000 residents over permit_years
     (December rows hold the calendar year's trailing-12-month total) against ZHVI

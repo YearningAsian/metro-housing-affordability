@@ -86,6 +86,22 @@ had lower incomes (−0.34 SD) and cheaper homes (−0.26 SD) than their metro.
   ZORI-based features cover under half of ZIP-years (44–49%). Permits and migration are county rates spread to ZIPs.
   14,247 ZIP-years (1,436 ZIPs, January 2016–2025).
 
+## Q6. Mortgage payment as a share of income
+
+**Finding:** the monthly mortgage on a typical home now takes more than 30% of a median household income in 7 of 11
+metros; in the 2015 average, none passed 30%. Seattle is highest at 42.7% (up from 24.9%), and Nashville rose almost as much
+(19.6% to 35.5%). Dallas–Fort Worth is lowest at 27.0% (up from 15.7%). The share rose faster than price-to-income
+because mortgage rates roughly doubled.
+
+- Number: 7 of 11 over 30% (none in 2015); Seattle 42.7%, Dallas–Fort Worth 27.0%.
+- Helper: `mortgage_share_change()` in [`notebooks/common.py`](../notebooks/common.py). Principal and interest only,
+  ZHVI with 10% down, 30-year fixed at that month's Freddie Mac rate, over median household income / 12; the 2015
+  average against Oct 2025–Sep 2026.
+- Caveats: the count depends on the down payment. With 3.5% down (FHA), 10 of 11 metros pass 30%; with 20% down, 4 do.
+  Seattle leads and Dallas–Fort Worth is lowest in every case. Taxes, insurance and HOA fees are left out, which
+  understates the real cost. The lagged ACS income overstates recent shares a little. Even from 2019, no metro started
+  above 30% (the highest was 29.5%).
+
 ## Robustness
 
 - **Start years:** see the Q1, Q2 and Q4 caveats. The Q1 leader changes with the start year. The Q2 slope weakens in
