@@ -11,7 +11,7 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
@@ -148,7 +148,8 @@ def should_skip(last, file, today):
 
 def run(extractors, data=DATA, today=None):
     """Run each extractor; return the number of failed files."""
-    today = today or date.today()
+    # UTC, like loaded_at, so "same month" never straddles midnight
+    today = today or datetime.now(UTC).date()
     data.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(data / "warehouse.duckdb"))
     con.execute(LOG_DDL)
@@ -203,7 +204,9 @@ def load_file(con, session, ex, f, data, today):
     if should_skip(last[0] if last else None, f, today):
         return "skipped"
 
-    load_id, loaded_at = uuid.uuid4().hex, datetime.now(UTC).replace(tzinfo=None)
+    # stamped on the run's date, so should_skip compares the same calendar as `today` (equal to now in a normal run)
+    load_id = uuid.uuid4().hex
+    loaded_at = datetime.combine(today, datetime.now(UTC).time())
     raw = data / "raw" / ex.source / today.isoformat() / f.filename
     row = {
         "load_id": load_id,
