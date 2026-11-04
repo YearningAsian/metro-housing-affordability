@@ -15,8 +15,9 @@ here. The monthly pipeline refits the classifier and writes each month's scores 
 
 **Answer:** yes, clearly better than chance, but not by much more than momentum. On the 2024–2025 test months,
 41–51% of flagged ZIPs landed in the top 20%, against a 20% base rate. Simply ranking ZIPs by last year's growth
-gets 44–46%. LightGBM has the best PR-AUC (0.342), logistic regression the best precision among the top 20 ZIPs a
-month (0.514), and the momentum baseline the best precision within metros (0.443).
+gets 44–46%. A LightGBM ranker has the best PR-AUC (0.358, against 0.342 for the classifier), logistic regression the
+best precision among the top 20 ZIPs a month (0.514), and the momentum baseline the best precision within metros (0.443,
+against 0.431 for the ranker and 0.405 for the classifier).
 
 ## Setup
 
@@ -34,6 +35,8 @@ month (0.514), and the momentum baseline the best precision within metros (0.443
   - *Logistic regression:* median imputation, standardization, no class weights (`scikit-learn`).
   - *LightGBM:* the forecast's fixed parameters with a binary objective and the positive class weighted 4:1
     (`scale_pos_weight`), with `cbsa_code` as a category. No tuning.
+  - *LightGBM ranker:* the same parameters, features and label with a LambdaRank objective, one group per metro and
+    month, truncated at 80 ZIPs (the top fifth of the largest metro). No tuning. Backtest only.
 - **Flags:** a ZIP is flagged when its score is in the top 20% of its metro's ZIPs that month, so every metro has the
   same share flagged as the base rate.
 
@@ -42,11 +45,13 @@ month (0.514), and the momentum baseline the best precision within metros (0.443
 | Period | Model | Precision, top 20 ZIPs a month | Precision, top 20% per metro | PR-AUC |
 | --- | --- | --- | --- | --- |
 | Validate (2023) | Momentum | 0.217 | 0.300 | 0.225 |
-| | Logistic regression | 0.358 | **0.322** | 0.273 |
-| | LightGBM | **0.442** | 0.304 | **0.291** |
+| | Logistic regression | 0.358 | 0.322 | 0.273 |
+| | LightGBM | **0.442** | 0.304 | 0.291 |
+| | LightGBM ranker | 0.433 | **0.327** | **0.306** |
 | Test (2024–2025) | Momentum | 0.455 | **0.443** | 0.301 |
 | | Logistic regression | **0.514** | 0.412 | 0.338 |
-| | LightGBM | 0.438 | 0.405 | **0.342** |
+| | LightGBM | 0.438 | 0.405 | 0.342 |
+| | LightGBM ranker | 0.443 | 0.431 | **0.358** |
 | Both | Base rate | 0.200 | 0.200 | 0.200 |
 
 "Top 20 ZIPs a month" takes the 20 highest scores across all metros each month and averages the share that landed
@@ -55,6 +60,10 @@ in their metro's top 20%. "Top 20% per metro" flags each metro's top fifth, the 
 Every model beats the 20% base rate on every measure in both periods; the models gain little over momentum.
 Momentum was weak in 2023 (0.217), when the 2022 price turn made last year's leaders a poor guide, and strong in
 2024–2025, so its usefulness swings with the market. The models are steadier across both periods.
+
+The ranker beats the classifier on precision within metros and on PR-AUC in both periods, and it has the best
+precision within metros in 2023. It still trails momentum on test precision (0.431 against 0.443). Its scores carry no meaning across metros, so its top-20-a-month and pooled PR-AUC figures are rough. The
+monthly run keeps the classifier: its scores are probabilities, and the calibration and SHAP checks below rest on them.
 
 LightGBM precision within metros on the test months ranges from 0.23 (Tampa) and 0.29 (Charlotte) to 0.49 (Atlanta
 and Phoenix):

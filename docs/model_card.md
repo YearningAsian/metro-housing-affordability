@@ -78,10 +78,14 @@ calibrates on the latest known year only; its first band is about 9 pp wide at t
 | --- | --- | --- |
 | Momentum (last year's growth) | **0.443** | 0.301 |
 | Logistic regression | 0.412 | 0.338 |
-| LightGBM | 0.405 | **0.342** |
+| LightGBM | 0.405 | 0.342 |
+| LightGBM LambdaRank (backtest only) | 0.431 | **0.358** |
 
-Every model doubles the base rate. LightGBM has the best PR-AUC but does not beat momentum on the published rule's
-precision in the test period; it did in 2023 (0.304 against 0.300), when momentum collapsed after the 2022 turn.
+Every model doubles the base rate. The LightGBM classifier does not beat momentum on the published rule's precision in
+the test period; it did in 2023 (0.304 against 0.300), when momentum collapsed after the 2022 turn. A LambdaRank
+version, with the same features and label but ranking within each metro-month, beats the classifier in both periods
+(2023: 0.327, the best of any model) and still trails momentum on the test period's precision. The monthly run keeps
+the classifier, whose scores are probabilities with calibration and SHAP checks behind them.
 SHAP explanations are in the hot-ZIP report.
 
 **Against Gate E** ("every model beats its baseline"): the forecast beats naive and the classifier beats chance and

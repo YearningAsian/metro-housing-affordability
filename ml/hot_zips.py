@@ -2,8 +2,9 @@
 
 Classifies target_top20 from ml.features_zip_month. Each evaluation fit sees only rows whose outcome was published
 before its period began: rows known by January 2023 for the 2023 validation months and by January 2024 for the
-2024-2025 test months. Models: last year's growth as a baseline score, logistic regression, and LightGBM with the
-positive class weighted 4:1. Explanations are LightGBM's TreeSHAP values (pred_contrib), in log-odds.
+2024-2025 test months. Models: last year's growth as a baseline score, logistic regression, LightGBM with the
+positive class weighted 4:1, and a backtest-only LightGBM LambdaRank grouped by metro and month. Explanations are the
+classifier's TreeSHAP values (pred_contrib), in log-odds.
 
 Draws docs/figures/hot_zips_*.png and prints the metrics and the current top flags for docs/hot_zips_report.md. The
 monthly scores and flags go to ml.predictions through ml/train.py.
@@ -16,6 +17,9 @@ from ml.forecast import ROOT, features, fit_lgbm, known_by, load
 
 TOP = 20  # flagged ZIPs per month for the headline precision
 WEIGHT = 4  # positive class weight: 80% negatives to 20% positives
+RANK_DEPTH = (
+    80  # the top fifth of the largest metro (388 ZIPs), past LightGBM's default of 30
+)
 FITS = {
     "validate": "2023-01-01",
     "test": "2024-01-01",
@@ -40,6 +44,21 @@ def fit_logit(train, cols):
 def fit_classifier(train, cols):
     return fit_lgbm(
         train, cols, objective="binary", label="target_top20", scale_pos_weight=WEIGHT
+    )
+
+
+def fit_ranker(train, cols):
+    """LambdaRank within each metro-month, on the same label and features as the classifier."""
+    # lambdarank wants each group's rows together
+    train = train.sort_values(["cbsa_code", "month", "zip"])
+    sizes = train.groupby(["cbsa_code", "month"], observed=True, sort=False).size()
+    return fit_lgbm(
+        train,
+        cols,
+        objective="lambdarank",
+        label="target_top20",
+        group=sizes.to_numpy(),
+        lambdarank_truncation_level=RANK_DEPTH,
     )
 
 
@@ -73,10 +92,11 @@ def evaluate(zips, cols, numeric):
         d["logit"] = fit_logit(train, numeric).predict_proba(d[numeric])[:, 1]
         model = fit_classifier(train, cols)
         d["lgbm"] = model.predict(d[cols])
+        d["rank"] = fit_ranker(train, cols).predict(d[cols])
         print(
             f"{split}: trained on {len(train):,} rows, scored {len(d):,} ZIP-months in {d.month.nunique()} months"
         )
-        for m in ["baseline", "logit", "lgbm"]:
+        for m in ["baseline", "logit", "lgbm", "rank"]:
             rows[(split, m)] = metrics(d, m)
         scored[split] = (d, model)
     table = pd.DataFrame(rows).T.round(3)

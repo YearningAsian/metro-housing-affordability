@@ -47,8 +47,8 @@ What the models can and cannot do (details in the [model card](docs/model_card.m
 
 - The 12-month forecast ranks ZIPs within a metro better than any baseline (error 1.57 points), but a plain no-change
   guess beats it overall in 2024–2025 (2.84 against 3.63), because the market flattened in a way no training year had.
-- Every hot-ZIP model doubles the 20% base rate. LightGBM has the best PR-AUC (0.342 against 0.301 for momentum), but
-  momentum is still more precise on the published top-20%-per-metro rule (0.443 against 0.405).
+- Every hot-ZIP model doubles the 20% base rate. LightGBM beats momentum on PR-AUC (0.342, or 0.358 as a ranker, against 0.301), but
+  momentum is still more precise on the published top-20%-per-metro rule (0.443 against 0.405, or 0.431 as a ranker).
 - Neither model beats its strongest simple baseline on every measure, so the dashboard shows both as within-metro
   rankings, not price targets. Not investment advice.
 

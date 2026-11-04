@@ -75,9 +75,9 @@ any baseline: its error is 1.57 percentage points against 1.74 to 1.78 for the b
 and 2025 a plain "no change" guess beat it (2.84 against 3.63), because the market flattened in a way no training
 year had, and the model kept forecasting gains.
 
-The second flags likely hot ZIPs. Every model I tried doubled the 20% base rate. LightGBM had the best precision-recall
-area (0.342 against 0.301 for momentum), but simple momentum was still more precise on the published
-top-fifth-per-metro rule (0.443 against 0.405).
+The second flags likely hot ZIPs. Every model I tried doubled the 20% base rate. LightGBM beat momentum on precision-recall
+area (0.342, or 0.358 as a ranker, against 0.301), but simple momentum was still more precise on the published
+top-fifth-per-metro rule (0.443 against 0.405, or 0.431 as a ranker).
 
 Neither model beats its strongest simple baseline on every measure. So the dashboard shows both as rankings within
 a metro, not price targets, and the [model card](model_card.md) says where they fail: regime changes, insurance costs
