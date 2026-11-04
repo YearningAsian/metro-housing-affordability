@@ -148,6 +148,24 @@ most of it, for a net +0.14. From 2021 to Oct 2025–Sep 2026, rates and tax wer
   larger. Austin is the one metro where prices fell after 2021 (−0.05). Lagged ACS income makes the latest income part
   a little too small.
 
+## Q9. Price pressure on lower-income ZIPs
+
+**Finding:** fast price growth landed mostly on lower-income ZIPs. Of each metro's top fifth of ZIPs for home value
+growth from 2015 to Oct 2025–Sep 2026, 88% had a 2015 income below the median of the metro's ZIPs, against 50% if
+growth ignored income. That share ranges from 60% in Seattle to 100% in Atlanta, Dallas–Fort Worth, Orlando and
+Raleigh. 248 of 1,403 ZIPs are lower-income ZIPs with top-fifth growth; Atlanta's 30314 (Westside) grew most, about
+5.6 times its 2015 value. At the median, ACS income in these ZIPs rose about as fast as in other lower-income ZIPs
+(+62% against +60%), with large gaps only in Phoenix (+22 points) and Orlando (+14).
+
+- Number: 88% of top-fifth growth ZIPs were lower-income (60% Seattle to 100%); 248 pressure ZIPs.
+- Chart: [maps by metro](figures/q9_price_pressure_maps.png); the top 3 per metro are in the notebook.
+- Notebook: [`09_q9_gentrification_pressure.ipynb`](../notebooks/09_q9_gentrification_pressure.ipynb).
+- Caveats: this is an association, not displacement; price growth says nothing about who moved out. Cheap homes grew
+  faster everywhere in this period (Q5), so part of the pattern is a cheap-home effect, not a neighborhood one. ZIP
+  income is the ACS 5-year estimate, so the 2015 value covers 2011–2015 and the latest covers 2020–2024, and changes in
+  who lives there show up late. Some flagged ZIPs are large exurban or rural ones (for example, near Mount Rainier and
+  in Park County, Colorado), which dominate the maps by area. ZIPs with no 2015 ZHVI or ACS income are left out.
+
 ## Robustness
 
 - **Start years:** see the Q1, Q2 and Q4 caveats. The Q1 leader changes with the start year. The Q2 slope weakens in
