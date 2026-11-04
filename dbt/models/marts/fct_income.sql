@@ -1,5 +1,6 @@
--- ACS 5-year estimates for the study metros, their counties and their ZIPs (through the ZCTA with the same code),
--- one row per place and vintage.
+-- ACS estimates for the study metros, their counties and their ZIPs (through the ZCTA with the same code), one row
+-- per place and vintage. Metros use the 1-year survey (single year, about a year fresher); counties and ZIPs, which
+-- the 1-year survey mostly does not cover, use the 5-year survey.
 with acs as (
     select * from {{ ref('stg_acs__estimates') }}
 ),
@@ -11,7 +12,8 @@ places as (
         m.cbsa_code,
         a.*
     from acs as a
-    inner join {{ ref('dim_metro') }} as m on a.geo_level = 'metro' and a.geo_code = m.cbsa_code
+    inner join {{ ref('dim_metro') }} as m
+        on a.geo_level = 'metro' and a.geo_code = m.cbsa_code and a.acs_survey = 'acs1'
     union all
     select
         'county' as place_level,
@@ -35,6 +37,7 @@ select
     place_level as geo_level,
     place_code as geo_code,
     cbsa_code,
+    acs_survey,
     acs_vintage,
     median_household_income_usd,
     population,

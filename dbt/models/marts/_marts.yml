@@ -246,6 +246,12 @@ models:
         description: All units permitted.
       - name: is_estimated
         description: True when the row is a twelfth of the county's annual total, not a monthly report.
+      - name: reported_total_units
+        description: All units as the monthly file reported them, before scaling to the annual total.
+      - name: annual_scale
+        description: >
+          Annual-file total over the county-year's reported monthly sum, which every unit type was scaled toward;
+          null in a year with no annual file yet.
 
   - name: fct_wages
     description: >
@@ -301,8 +307,8 @@ models:
 
   - name: fct_income
     description: >
-      ACS 5-year estimates for the study metros, their counties and their ZIPs (through the ZCTA with the same
-      code), one row per place and vintage.
+      ACS estimates for the study metros (1-year survey), their counties and their ZIPs (5-year survey; ZIPs
+      through the ZCTA with the same code), one row per place and vintage.
     data_tests:
       - unique:
           arguments:
@@ -311,8 +317,9 @@ models:
       - *geo_level
       - *geo_code
       - *cbsa_code
+      - {name: acs_survey, description: "{{ doc('income_acs_survey') }}", data_tests: [not_null]}
       - name: acs_vintage
-        description: Last year of the five-year period.
+        description: Last year of the survey period.
         data_tests: [not_null]
       - &median_household_income_usd
         {name: median_household_income_usd, description: "{{ doc('median_household_income_usd') }}"}
@@ -424,6 +431,7 @@ models:
       - *median_gross_rent_usd
       - *rent_pct_income
       - {name: income_acs_vintage, description: "{{ doc('income_acs_vintage') }}"}
+      - {name: income_acs_survey, description: "{{ doc('income_acs_survey') }}"}
       - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}
       - {name: mortgage_rate_pct, description: "{{ doc('mortgage_rate_pct') }}"}
       - {name: cpi, description: "{{ doc('cpi') }}"}

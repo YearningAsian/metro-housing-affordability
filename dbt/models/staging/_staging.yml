@@ -116,14 +116,16 @@ models:
         description: Construction value permitted, in dollars.
 
   - name: stg_acs__estimates
-    description: ACS 5-year estimates by ZCTA, county and CBSA. Negative Census sentinels become null.
+    description: ACS 5-year estimates by ZCTA, county and CBSA, and 1-year estimates by CBSA. Negative Census sentinels become null.
     columns:
+      - name: acs_survey
+        description: acs5 (5-year) or acs1 (1-year).
       - name: geo_level
         description: zcta, county or metro (any CBSA).
       - name: geo_code
         description: ZCTA, 5-char county FIPS or CBSA code.
       - name: acs_vintage
-        description: Last year of the five-year period.
+        description: Last year of the survey period (the survey year for 1-year estimates).
       - name: median_household_income_usd
         description: "{{ doc('median_household_income_usd') }}"
       - name: population

@@ -1,7 +1,12 @@
 {# Write the gold marts and the map geometry to <path> for the dashboard. Run after dbt build: .\tasks.ps1 export #}
 {% macro export_marts(path='data/export') %}
     {% for mart in ['dim_metro', 'mart_metro_month', 'mart_zip_month', 'mart_migration_origins', 'mart_zip_forecast'] %}
-        {% do run_query("copy " ~ ref(mart) ~ " to '" ~ path ~ "/" ~ mart ~ ".parquet' (format parquet)") %}
+        {# about a quarter of study ZIPs (PO boxes, tiny places) never get a Zillow value; the dashboard has no
+           use for them #}
+        {% set priced = "select zip from " ~ ref(mart) ~ " where zhvi_usd is not null" %}
+        {% set rows = "(select * from " ~ ref(mart) ~ " where zip in (" ~ priced ~ "))"
+            if mart == 'mart_zip_month' else ref(mart) %}
+        {% do run_query("copy " ~ rows ~ " to '" ~ path ~ "/" ~ mart ~ ".parquet' (format parquet)") %}
         {% do log("exported " ~ mart, info=true) %}
     {% endfor %}
 

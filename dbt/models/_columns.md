@@ -42,12 +42,14 @@ Column descriptions shared by the int_ models and the marts, referenced from the
 {% docs migration_tax_year %}IRS tax year of the migration values; it applies from January of that year.{% enddocs %}
 {% docs migration_is_carried_forward %}True when the month's year is after migration_tax_year.{% enddocs %}
 
-{% docs median_household_income_usd %}ACS 5-year median household income, in dollars. ZIPs: the ZCTA with the same code.{% enddocs %}
+{% docs median_household_income_usd %}ACS median household income, in dollars: 1-year survey for metros, 5-year for counties and ZIPs (the ZCTA with the same code). In the monthly models it moves in a straight line between vintages.{% enddocs %}
 {% docs population %}ACS 5-year total population.{% enddocs %}
 {% docs median_gross_rent_usd %}ACS 5-year median gross rent (rent plus utilities), in dollars per month.{% enddocs %}
 {% docs rent_pct_income %}ACS 5-year median gross rent as a percentage of household income.{% enddocs %}
-{% docs income_acs_vintage %}ACS 5-year vintage (its last year) of the income values; it applies from January of that year.{% enddocs %}
-{% docs income_is_carried_forward %}True when the month's year is after income_acs_vintage.{% enddocs %}
+{% docs income_acs_vintage %}ACS vintage (its last year) the income values start from; it is pinned to January of that year, and later months move toward the next vintage.{% enddocs %}
+
+{% docs income_acs_survey %}ACS survey of the income values: acs1 (1-year, metros) or acs5 (5-year, ZIPs).{% enddocs %}
+{% docs income_is_carried_forward %}True when the month is after the latest vintage's January year, so the latest values repeat.{% enddocs %}
 
 {% docs mortgage_rate_pct %}Freddie Mac 30-year fixed mortgage rate (FRED MORTGAGE30US), monthly average of the weekly rates, in percent.{% enddocs %}
 {% docs cpi %}US CPI for all urban consumers (FRED CPIAUCSL), seasonally adjusted, 1982-84 = 100.{% enddocs %}

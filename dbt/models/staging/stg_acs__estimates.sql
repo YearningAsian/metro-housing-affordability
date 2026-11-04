@@ -1,7 +1,9 @@
--- ACS 5-year estimates by ZCTA, county and CBSA, one row per place and vintage. The Census API writes negative
--- sentinels (e.g. -666666666) for estimates it cannot publish; those become null.
+-- ACS 5-year estimates by ZCTA, county and CBSA, plus 1-year estimates by CBSA, one row per survey, place and
+-- vintage. The Census API writes negative sentinels (e.g. -666666666) for estimates it cannot publish; those become
+-- null.
 with unioned as (
     select
+        'acs5' as acs_survey,
         'zcta' as geo_level,
         "zip code tabulation area" as geo_code,  -- noqa: RF05
         *
@@ -9,6 +11,7 @@ with unioned as (
     {{ latest_load() }}
     union all by name
     select
+        'acs5' as acs_survey,
         'county' as geo_level,
         state || county as geo_code,
         *
@@ -16,14 +19,24 @@ with unioned as (
     {{ latest_load() }}
     union all by name
     select
+        'acs5' as acs_survey,
         'metro' as geo_level,
         "metropolitan statistical area/micropolitan statistical area" as geo_code,  -- noqa: RF05
         *
     from {{ source('bronze', 'acs__cbsa') }}
     {{ latest_load() }}
+    union all by name
+    select
+        'acs1' as acs_survey,
+        'metro' as geo_level,
+        "metropolitan statistical area/micropolitan statistical area" as geo_code,  -- noqa: RF05
+        *
+    from {{ source('bronze', 'acs__cbsa_1yr') }}
+    {{ latest_load() }}
 )
 
 select
+    acs_survey,
     geo_level,
     geo_code,
     vintage::int as acs_vintage,

@@ -99,7 +99,8 @@ county_permits as (
     select
         county_fips,
         month,
-        sum(total_units) over w as units_12m,
+        -- as reported, before fct_permits scales finished years to the annual file published the next May
+        sum(reported_total_units) over w as units_12m,
         count(*) over w as months_12m,
         -- BPS publishes a month's county permits within a month of its end; the annual totals behind the estimated
         -- months come out in May of the next year

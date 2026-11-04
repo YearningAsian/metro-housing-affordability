@@ -30,6 +30,16 @@ class ACS(BaseExtractor):
             # the 5-year vintage ending in Y comes out in December of Y+1
             for y in range(2015, date.today().year)
             for geo, clause in GEOS.items()
+        ] + [
+            # 1-year estimates by CBSA, fresher and single-year, for the metro grain; year Y comes out in September
+            # of Y+1, and 2020 was never released in the standard tables (404, skipped as optional)
+            File(
+                "cbsa_1yr",
+                f"https://api.census.gov/data/{y}/acs/acs1?{urlencode({'get': VARIABLES, 'for': GEOS['cbsa'], 'key': key})}",
+                f"acs1_{y}_cbsa.json",
+                optional=True,
+            )
+            for y in range(2015, date.today().year)
         ]
 
     def read(self, con, path, file):

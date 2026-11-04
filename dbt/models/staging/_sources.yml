@@ -60,6 +60,9 @@ sources:
       - name: acs__cbsa
         description: ACS 5-year estimates by CBSA.
         config: *yearly
+      - name: acs__cbsa_1yr
+        description: ACS 1-year estimates by CBSA (no 2020 release).
+        config: *yearly
       - name: qcew__industry_10
         description: BLS QCEW all-industry totals, one file per quarter.
         config: &quarterly

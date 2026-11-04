@@ -1,8 +1,8 @@
 {{ config(severity='warn') }}
 -- Yearly permit units per metro in fct_permits against the BPS annual files, within 15%. Monthly files are never
--- revised and the annual files add late reports, so monthly sums run a little low. A warning, not an error: the gap
--- is in the source. Known: Nashville 2022 is 36% low because Davidson County's monthly reports sum to 5,525 units
--- against 15,285 in the annual file.
+-- revised and the annual files add late reports, so raw monthly sums run low (Nashville 2022 was 36% low: Davidson
+-- County's monthly reports sum to 5,525 units against 15,285 in the annual file). fct_permits scales each county-year
+-- to the annual file, so this guards that scaling. A warning, not an error: any gap is in the source.
 with monthly as (
     select
         cbsa_code,
