@@ -1,6 +1,7 @@
 from ingest.acs import ACS
 from ingest.bps import BPS
 from ingest.census_geo import CensusGeo
+from ingest.fema_nri import FEMANRI
 from ingest.fred import FRED
 from ingest.hud_crosswalk import HUDCrosswalk
 from ingest.hud_fmr import HUDFMR
@@ -22,5 +23,6 @@ EXTRACTORS = {
         HUDFMR,
         HUDCrosswalk,
         CensusGeo,
+        FEMANRI,
     )
 }

@@ -299,3 +299,50 @@ models:
     columns:
       - name: zcta
         description: 5-char ZCTA code.
+
+  - name: stg_fema_nri__counties
+    description: >
+      FEMA National Risk Index by county, one fixed release (v1.20, December 2025). Scores are national percentile
+      ranks; expected annual losses (EAL) are dollars of building value lost to natural hazards in an average year.
+    columns:
+      - name: county_fips
+        description: 5-char county FIPS.
+        data_tests: [unique, not_null]
+      - name: state
+        description: Two-letter state abbreviation.
+      - name: county_name
+        description: County name.
+      - name: nri_version
+        description: Release, e.g. December 2025.
+      - name: population
+        description: Population FEMA used for the county.
+      - name: building_value_usd
+        description: Value of the county's buildings, dollars.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0}}}]
+      - name: risk_score
+        description: Composite risk, national percentile rank 0-100. Null for a few counties FEMA does not score.
+        data_tests: &score [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 100}}}]
+      - name: risk_rating
+        description: Composite risk rating, from Very Low to Very High.
+      - name: eal_score
+        description: Expected annual loss, all hazards, national percentile rank 0-100.
+        data_tests: *score
+      - name: eal_buildings_usd
+        description: Expected annual loss of building value, all hazards, dollars.
+      - name: building_loss_rate
+        description: Expected annual loss rate of building value, all hazards (0.0017 = 0.17% a year).
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 0.1}}}]
+      - name: social_vulnerability_score
+        description: Social vulnerability, national percentile rank 0-100.
+        data_tests: *score
+      - name: resilience_score
+        description: Community resilience, national percentile rank 0-100.
+        data_tests: *score
+      - name: hurricane_eal_buildings_usd
+        description: Expected annual building loss from hurricanes, dollars. Null where the hazard does not apply.
+      - name: coastal_flood_eal_buildings_usd
+        description: Expected annual building loss from coastal flooding, dollars. Null where it does not apply.
+      - name: inland_flood_eal_buildings_usd
+        description: Expected annual building loss from inland (river and rain) flooding, dollars.
+      - name: wildfire_eal_buildings_usd
+        description: Expected annual building loss from wildfire, dollars.

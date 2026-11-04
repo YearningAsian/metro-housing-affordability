@@ -111,6 +111,17 @@ models:
         description: True when zcta is set.
       - name: is_po_box_only
         description: True when the ZIP has no residential addresses (PO-box or business-only ZIP). Left out of the marts.
+      - name: building_loss_rate
+        description: >
+          FEMA National Risk Index (v1.20, December 2025) expected annual loss rate of building value, all hazards,
+          res_ratio-weighted over the ZIP's counties (0.0017 = 0.17% a year). Null for PO-box-only ZIPs.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 0.1}}}]
+      - name: hurricane_loss_rate
+        description: Expected annual building loss from hurricanes over building value, weighted the same way.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 0.1}}}]
+      - name: flood_loss_rate
+        description: Expected annual building loss from coastal and inland flooding over building value, weighted the same way.
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 0.1}}}]
 
   - name: dim_date
     description: One row per month from January 2012 to the current month.

@@ -44,7 +44,7 @@ September 2026.
 
 **On screen:** the README architecture diagram; a pipeline run under Actions; the dbt lineage graph.
 
-Everything comes from free public data: eleven sources, including Zillow, Redfin, the Census Bureau, the Bureau of
+Everything comes from free public data: twelve sources, including Zillow, Redfin, the Census Bureau, the Bureau of
 Labor Statistics, the Federal Reserve, the IRS and HUD. Python loaders save each download as Parquet, the bronze
 layer. dbt on DuckDB cleans and tests it into silver tables, then joins those into gold tables at two levels: metro
 by month and ZIP by month. Two LightGBM models read the gold layer, and MLflow logs every run. On the twentieth of
@@ -150,6 +150,6 @@ Set the timestamps to the final edit before uploading; YouTube needs the first c
 Eleven of America's fastest-growing metros. Every one got less affordable since 2015. In Seattle, the typical home
 went from 4.5 years of median income to 6.1. Austin rose least. Why? It built more housing than anywhere else,
 almost sixteen homes per thousand residents a year, and its prices grew the least. Meanwhile in Atlanta, rents rose 81%
-while wages rose 53%. I built a pipeline that pulls eleven public data sources every month, rebuilds the warehouse,
+while wages rose 53%. I built a pipeline that pulls twelve public data sources every month, rebuilds the warehouse,
 retrains two models and updates a live dashboard, with no server to run. The full video and the code are linked in
 the comments.

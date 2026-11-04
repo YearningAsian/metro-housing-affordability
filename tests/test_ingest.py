@@ -27,6 +27,7 @@ CASES = [
     ("hud_crosswalk", "zip_county.json", 3),
     ("census_geo", "list1_2023.xlsx", 2),
     ("census_geo", "cb_2024_us_county_500k.zip", 2),
+    ("fema_nri", "NRI_Table_Counties.zip", 2),
 ]
 
 

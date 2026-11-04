@@ -166,6 +166,27 @@ Raleigh. 248 of 1,403 ZIPs are lower-income ZIPs with top-fifth growth; Atlanta'
   who lives there show up late. Some flagged ZIPs are large exurban or rural ones (for example, near Mount Rainier and
   in Park County, Colorado), which dominate the maps by area. ZIPs with no 2015 ZHVI or ACS income are left out.
 
+## Q10. Does climate risk explain the Tampa and Orlando declines?
+
+**Finding:** no, not as FEMA measures it. From the 2024 average to Oct 2025–Sep 2026, Austin fell more (−7.3% at the
+median ZIP) than Tampa (−7.0%), and Orlando (−4.5%) fell as much as Dallas–Fort Worth, with almost no hurricane risk
+in either Texas metro. Tampa and Orlando carry the highest expected hurricane losses (0.070% and 0.029% of building
+value a year, against at most 0.005% elsewhere), but within them higher risk does not go with larger falls (r = +0.36
+for hurricanes, +0.12 for all hazards, 0.00 for flooding). The +0.36 is mostly one county: Pinellas fell most (−9.4%
+at the median ZIP, 33716 −23%) with the lowest modeled hurricane rate in Tampa, and without it r is −0.09. Pinellas
+took Hurricane Helene's storm surge in September 2024, which a fixed risk index does not record; that is a candidate
+explanation, not one tested here.
+
+- Number: within Tampa and Orlando, r = +0.36 between the hurricane loss rate and the value change, −0.09 without
+  Pinellas, −0.11 in Orlando alone; across all ZIPs within their metros, +0.05 to +0.12. None supports a risk discount.
+- Chart: [metro medians and Florida ZIPs](figures/q10_climate_risk.png).
+- Notebook: [`09_q10_climate_risk.ipynb`](../notebooks/09_q10_climate_risk.ipynb). Risk: FEMA National Risk Index
+  v1.20 (December 2025), expected annual building loss over building value, from `gold.dim_zip`.
+- Caveats: the index is by county, so inside the two Florida metros it varies only between 8 counties. It measures
+  physical risk, not insurance premiums, which rose statewide in Florida for reasons a county risk score does not
+  capture (litigation, reinsurance costs); a null here does not rule out insurance. The release postdates the period,
+  so it is not used as a forecast feature, where it would leak.
+
 ## Robustness
 
 - **Start years:** see the Q1, Q2 and Q4 caveats. The Q1 leader changes with the start year. The Q2 slope weakens in

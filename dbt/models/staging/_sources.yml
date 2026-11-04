@@ -97,3 +97,6 @@ sources:
       - name: census_geo__zcta_shapes
         description: Census cartographic boundaries, ZCTAs, 2020.
         config: *static
+      - name: fema_nri__counties
+        description: FEMA National Risk Index by county, v1.20 (December 2025).
+        config: *static

@@ -328,6 +328,26 @@ Shapefiles from `https://www2.census.gov/geo/tiger/GENZ{year}/shp/`: `cb_2024_us
 | `ALAND`, `AWATER` | BIGINT | square metres | Land and water area. |
 | `geom` | GEOMETRY | polygon | Shape (simplified, 1:500,000). |
 
+## FEMA National Risk Index
+
+File `NRI_Table_Counties.zip` from OpenFEMA (`https://www.fema.gov/about/reports-and-data/openfema/nri/v120/`), v1.20, December 2025: 3,232 counties, 465 columns. The old `hazards.fema.gov` links now redirect to an HTML page. Bronze keeps every column; staging (`stg_fema_nri__counties`) keeps the composite scores and the building losses for the four hazards that matter in the study metros. One fixed release, fetched once; a new release has a new URL.
+
+**Quirks.**
+
+- The first header (`OID_`) starts with a byte-order mark; the extractor reads with `utf-8-sig`.
+- A blank hazard column means FEMA found the hazard does not apply (no hurricane loss in King County, WA). 747 counties have no hurricane loss.
+- 88 counties have no composite score.
+
+| Column | Type | Unit | Definition |
+| --- | --- | --- | --- |
+| `STCOFIPS` | VARCHAR(5) | county FIPS | County key. |
+| `BUILDVALUE` | DOUBLE | USD | Value of the county's buildings. |
+| `RISK_SCORE`, `EAL_SCORE`, `SOVI_SCORE`, `RESL_SCORE` | DOUBLE | percentile 0–100 | Composite risk, expected annual loss, social vulnerability, community resilience. |
+| `RISK_RATNG` | VARCHAR | category | Very Low to Very High. |
+| `EAL_VALB` | DOUBLE | USD per year | Expected annual loss of building value, all hazards. |
+| `ALR_VALB` | DOUBLE | share per year | Expected annual building loss rate, all hazards. |
+| `HRCN_EALB`, `CFLD_EALB`, `IFLD_EALB`, `WFIR_EALB` | DOUBLE | USD per year | Expected annual building loss from hurricane, coastal flooding, inland flooding and wildfire. |
+
 ## Geography backbone
 
 dbt models in `dbt/models/staging/` and `dbt/models/marts/`, built from bronze with `.\tasks.ps1 build` into `data/warehouse.duckdb`. Layers and naming are in [`warehouse_design.md`](warehouse_design.md).
@@ -369,7 +389,7 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 
 ## Ingestion: raw, bronze and the load log
 
-`.\tasks.ps1 ingest [source ...]` (or `uv run python -m ingest`) runs the extractors in `ingest/`. Sources: `zillow`, `redfin`, `bps`, `acs`, `qcew`, `fred`, `irs_migration`, `hud_fmr`, `hud_crosswalk`, `census_geo` (delineation and boundaries).
+`.\tasks.ps1 ingest [source ...]` (or `uv run python -m ingest`) runs the extractors in `ingest/`. Sources: `zillow`, `redfin`, `bps`, `acs`, `qcew`, `fred`, `irs_migration`, `hud_fmr`, `hud_crosswalk`, `census_geo` (delineation and boundaries), `fema_nri` (National Risk Index).
 
 - **Raw**: every download lands unchanged in `data/raw/<source>/<load_date>/<file>`.
 - **Bronze**: each file becomes `data/bronze/<source>/<entity>/<file_stem>__<load_date>.parquet`. Every source column is text (boundary `geom` is WKB), plus `_source_file`, `_load_id`, `_loaded_at` (UTC) and `_file_hash`. JSON APIs are flattened: ACS adds `vintage`, FRED adds `series_id`, HUD crosswalk adds `year` and `quarter`.

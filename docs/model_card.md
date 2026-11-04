@@ -105,7 +105,10 @@ autumn 2027, once Zillow publishes September 2027.
 - **Noisy single scores:** a different row order moved single test scores by up to 0.25, so ZIPs near a metro's
   80th-percentile cutoff can flip in or out of the flags between runs.
 - **Missing drivers:** insurance costs, zoning and local employers are not in the data. The 2024-2025 Florida decline,
-  often tied to insurance costs, was missed.
+  often tied to insurance costs, was missed. FEMA's county risk index does not explain it either: inside Tampa and
+  Orlando, higher risk does not go with larger falls, and Austin fell as much with almost no hurricane risk
+  ([findings Q10](findings.md#q10-does-climate-risk-explain-the-tampa-and-orlando-declines)). The index is not a
+  feature: the release used here (December 2025) postdates the training months.
 - **Overlapping outcomes:** consecutive months share most of a 12-month window, so the backtest's test months are
   far from independent; a further year could reorder the models.
 - **Coverage:** 11 metros only; the models have not been tested anywhere else.

@@ -9,7 +9,7 @@ years of income to buy than it did in 2015.
 
 I wanted to know three things. How much worse did it get, and where? Did the metros that built more housing do
 better? And can you see which neighborhoods will jump next before they do? To answer them I built a pipeline that
-pulls 11 free public sources every month, from Zillow and Redfin to the Census, the Bureau of Labor Statistics, the
+pulls 12 free public sources every month, from Zillow and Redfin to the Census, the Bureau of Labor Statistics, the
 IRS and HUD, and turns them into one tested table per metro-month and per ZIP-month: 1,436 ZIP codes, January 2015 to
 September 2026.
 
@@ -87,7 +87,7 @@ and zoning, which the data does not have.
 
 ```mermaid
 flowchart LR
-    src["11 public sources"] --> bronze["Python loaders<br/>bronze Parquet"]
+    src["12 public sources"] --> bronze["Python loaders<br/>bronze Parquet"]
     bronze --> dbt["dbt on DuckDB<br/>silver tables, gold marts"]
     dbt --> ml["LightGBM forecast<br/>and hot-ZIP flags"]
     ml --> dbt
@@ -106,8 +106,9 @@ flowchart LR
 
 ## What I would do next
 
-The obvious gap is the drivers the data lacks. Insurance costs probably explain the 2024–2025 Florida decline that the
-forecast missed, and zoning sits behind the permits story. I would also test the models on metros they have never
+The obvious gap is the drivers the data lacks. Insurance costs may explain the 2024–2025 Florida decline that the
+forecast missed; FEMA's county risk index does not, since Austin fell as much with no hurricane risk. Zoning sits
+behind the permits story. I would also test the models on metros they have never
 seen, and give the forecast a year of flat-market data before trusting its metro-wide level.
 
 The code, the findings log and the model card are on

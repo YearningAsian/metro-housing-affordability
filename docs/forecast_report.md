@@ -129,7 +129,8 @@ the median ZIP's 80% interval bound after CQR.
 - **Austin:** the clearest win. After a 2022 crash, naive forecast another −13% from mid-2023, but values fell only
   about 4–5%. LightGBM tracked the outcome from mid-2024 on.
 - **Tampa:** the biggest miss. LightGBM forecast +1% to +4% from the 2024 origins, and values fell 4–6%. Nothing in the
-  features anticipated the Florida-wide decline; insurance costs, often cited for it, are not in the data.
+  features anticipated the Florida-wide decline; insurance costs, often cited for it, are not in the data, and FEMA's
+  county risk index does not explain it ([findings Q10](findings.md#q10-does-climate-risk-explain-the-tampa-and-orlando-declines)).
 - **Seattle:** LightGBM was too low in 2023 (it forecast −4% from July 2023; values rose 5%) and too high in 2024–2025
   (+4% to +6% forecast against 0% to −2%). In both cases it followed recent metro momentum one turn too long.
 
