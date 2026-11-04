@@ -90,19 +90,43 @@ had lower incomes (−0.34 SD) and cheaper homes (−0.26 SD) than their metro.
 
 ## Q6. Mortgage payment as a share of income
 
-**Finding:** the monthly mortgage on a typical home now takes more than 30% of a median household income in 5 of 11
-metros; in the 2015 average, none passed 30%. Seattle is highest at 41.0% (up from 22.8%), and Nashville had the next
-largest rise (18.0% to 32.9%). Dallas–Fort Worth is lowest at 25.7% (up from 15.0%). The share rose faster than
-price-to-income because mortgage rates roughly doubled.
+**Finding:** the monthly mortgage and property tax on a typical home now take more than 30% of a median household
+income in all 11 metros; in the 2015 average, none passed 30%. Seattle is highest at 46.1% (up from 27.3%), and
+Nashville had the next largest rise (20.6% to 35.3%). Atlanta is lowest at 30.5% (up from 17.5%). The share rose faster
+than price-to-income because mortgage rates roughly doubled. Principal and interest alone pass 30% in 5 of 11 metros
+(Seattle 41.0%).
 
-- Number: 5 of 11 over 30% (none in 2015); Seattle 41.0%, Dallas–Fort Worth 25.7%.
-- Helper: `mortgage_share_change()` in [`notebooks/common.py`](../notebooks/common.py). Principal and interest only,
-  ZHVI with 10% down, 30-year fixed at that month's Freddie Mac rate, over median household income / 12; the 2015
-  average against Oct 2025–Sep 2026.
-- Caveats: the count depends on the down payment. With 3.5% down (FHA), 8 of 11 metros pass 30%; with 20% down, 2 do.
-  Seattle leads and Dallas–Fort Worth is lowest in every case. Taxes, insurance and HOA fees are left out, which
-  understates the real cost. The lagged ACS income overstates recent shares a little. Even from 2019, no metro started
-  above 30% (the highest was 26.8%).
+- Number: 11 of 11 over 30% (none in 2015); Seattle 46.1%, Atlanta 30.5%.
+- Chart: [mortgage share by metro](figures/q6_mortgage_share.png).
+- Notebook: [`09_q6_q7_mortgage_and_who_can_afford.ipynb`](../notebooks/09_q6_q7_mortgage_and_who_can_afford.ipynb);
+  helper `mortgage_share_change()` in [`notebooks/common.py`](../notebooks/common.py). ZHVI with 10% down, 30-year
+  fixed at that month's Freddie Mac rate, plus property tax at the metro's effective rate (ACS median real estate
+  taxes over ACS median owner home value: 0.42% in Phoenix to 1.52% in Austin in 2025), over median household
+  income / 12; the 2015 average against Oct 2025–Sep 2026.
+- Caveats: the count depends on the down payment. With 3.5% down (FHA), all 11 metros pass 30%; with 20% down, 6 do.
+  Insurance and HOA fees are still left out, so the real cost is higher. The tax rate is what current owners pay on
+  what they say their home is worth; Florida's Save Our Homes cap and Texas's homestead cap hold down long-time owners'
+  bills, so a new buyer in Tampa, Orlando, Austin or Dallas–Fort Worth likely pays more. The lagged ACS income
+  overstates recent shares a little. From 2019 one metro, Seattle, already started above 30% (31.6%).
+
+## Q7. Who can afford the typical home
+
+**Finding:** in Oct 2025–Sep 2026 the households who could pay for a typical home at 30% of income or less ranged
+from 31% in Seattle to 50% in Atlanta. In 2015 they ranged from 54% (Seattle) to 71% (Atlanta). The share fell in all
+11 metros, by a median of 19 points. Seattle now takes an income of about $184,000.
+
+- Number: 31% (Seattle) to 50% (Atlanta), down from 54% to 71%.
+- Chart: [who can afford the typical home](figures/q7_who_can_afford.png).
+- Notebook: [`09_q6_q7_mortgage_and_who_can_afford.ipynb`](../notebooks/09_q6_q7_mortgage_and_who_can_afford.ipynb);
+  helper `affordable_share()` in [`notebooks/common.py`](../notebooks/common.py). The income needed is 12 times the
+  Q6 payment (with taxes, 10% down) divided by 30%. The share of households at or above it comes from the ACS 1-year
+  income brackets (B19001), linear within a bracket. 2015 uses the 2015 brackets and payments; the latest 12 months
+  use the 2025 brackets.
+- Caveats: it counts all households, renters and owners alike, and ignores savings for the down payment, debts and
+  credit. Wealthier buyers with equity from a sale need less income, so this is a rough reach, not a count of buyers.
+  The 2025 brackets are a year older than the latest payments, which understates the latest share a little while
+  incomes rise. Above $200,000 (the open top bracket) the method would return an upper bound; no metro needs that
+  much yet.
 
 ## Robustness
 

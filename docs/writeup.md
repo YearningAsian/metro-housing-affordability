@@ -3,7 +3,7 @@
 *Data through September 2026. Every number here is in the [findings log](findings.md) or the
 [model card](model_card.md), with its caveats.*
 
-In 2015 the typical home in Seattle cost 4.9 years of the median household's income. Today it costs 6.3. Seattle is
+In 2015 the typical home in Seattle cost 4.5 years of the median household's income. Today it costs 6.1. Seattle is
 the extreme case, but it is not the exception: in each of the 11 fast-growing metros I tracked, a home now takes more
 years of income to buy than it did in 2015.
 
@@ -18,12 +18,18 @@ September 2026.
 ![Change in price-to-income by metro, 2015 against the latest 12 months](figures/deck/price_to_income_change.png)
 
 Price-to-income is the typical home value divided by the median household income. Comparing the 2015 average with
-the last 12 months, it rose in all 11 metros. Seattle added 1.44 years of income and Nashville 1.39. Austin added
-0.04, because it gave back its whole 2022 spike.
+the last 12 months, it rose in all 11 metros. Seattle added 1.59 years of income and Nashville 1.34. Austin added
+0.29, after giving back most of its 2022 spike.
 
-One caveat matters here. The leader depends on where you start counting. Start in 2017 or 2019 and Charlotte rises
-most, while Seattle drops to the middle. Austin and Denver stay at the bottom from every start year, though. Income
-is also the slowest number in the ratio: the Census 5-year survey trails current incomes by about two years.
+One caveat matters here. The leader depends on where you start counting. Start in 2017 and Charlotte edges past
+Seattle (+0.97 against +0.93); start in 2019 and Seattle leads again. Austin stays at the bottom from every start year,
+though. Income is also the slowest number in the ratio: the Census 1-year survey comes out each September for the
+year before, so the latest ratios run a little high.
+
+Rates make it worse than the ratio shows. With 10% down at that month's 30-year rate, the mortgage and property tax
+on a typical home now take more than 30% of the median income in all 11 metros; in 2015, none passed 30%. Seattle is
+highest at 46.1%, up from 27.3%. Put another way, 31% of Seattle households earn enough to buy the typical home at
+30% of income, down from 54% in 2015.
 
 ## Rents outran pay in six metros
 
@@ -41,10 +47,10 @@ if nobody's pay changes. That probably flatters wage growth in Seattle and Austi
 
 ![Permits per 1,000 residents against home value growth, by metro](figures/deck/permits_vs_growth.png)
 
-Austin permitted the most housing of the 11 metros, 15.4 units per 1,000 residents a year from 2016 to 2025, and had
-the slowest home value growth, +57%. Across all 11 metros, more permits went with slower growth (r = −0.55).
+Austin permitted the most housing of the 11 metros, 15.6 units per 1,000 residents a year from 2016 to 2025, and had
+the slowest home value growth, +57%. Across all 11 metros, more permits went with slower growth (r = −0.54).
 
-Then I took Austin out, and the correlation fell to −0.10. One metro carries the whole line. Eleven points are far
+Then I took Austin out, and the correlation fell to −0.08. One metro carries the whole line. Eleven points are far
 too few to call supply the cause, and the arrow can run both ways: metros that draw demand also build more. The honest
 reading is that Austin is a striking case, not proof of a rule.
 

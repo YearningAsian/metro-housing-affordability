@@ -98,6 +98,7 @@ models:
       - {name: population, description: "{{ doc('population') }}"}
       - {name: median_gross_rent_usd, description: "{{ doc('median_gross_rent_usd') }}"}
       - {name: rent_pct_income, description: "{{ doc('rent_pct_income') }}"}
+      - {name: property_tax_rate, description: "{{ doc('property_tax_rate') }}"}
       - {name: income_acs_vintage, description: "{{ doc('income_acs_vintage') }}"}
       - {name: income_acs_survey, description: "{{ doc('income_acs_survey') }}"}
       - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}

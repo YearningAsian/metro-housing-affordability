@@ -49,9 +49,9 @@ c2.metric(
     f"{share.latest[code]:.0%}",
     f"{100 * share.change[code]:+.0f} pts since 2015",
     delta_color="inverse",
-    help="Monthly principal and interest on the typical home, 10% down, 30-year "
-    "fixed at that month's rate, over monthly median household income. Leaves out "
-    "taxes and insurance. Latest 12 months against the 2015 average.",
+    help="Monthly principal, interest and property tax on the typical home, 10% down, "
+    "30-year fixed at that month's rate, over monthly median household income. Leaves "
+    "out insurance and HOA fees. Latest 12 months against the 2015 average.",
 )
 c3.metric(
     "Typical home value",

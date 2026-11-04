@@ -200,6 +200,12 @@ vintage to January of its year and interpolates month by month to the next one, 
 | `population` (`B01003_001E`) | INTEGER | persons | Total population. |
 | `median_gross_rent` (`B25064_001E`) | INTEGER | USD per month | Median gross rent (contract rent plus utilities) of renter-occupied units paying cash rent. |
 | `rent_pct_income` (`B25071_001E`) | DOUBLE | percent | Median gross rent as a percentage of household income. |
+| `median_home_value_usd` (`B25077_001E`) | DOUBLE | USD | Median value of owner-occupied homes, as owners report it. |
+| `median_real_estate_taxes_usd` (`B25103_001E`) | DOUBLE | USD per year | Median real estate taxes paid by owner-occupied homes; top-coded at 10,000. |
+| `households_by_income` (`B19001_002E`–`_017E`) | DOUBLE[16] | households | Households in the 16 income brackets, under $10k to $200k or more. |
+
+`int_income` derives `property_tax_rate` = median real estate taxes / median home value per vintage, interpolated
+like income; the dashboard and notebooks add `zhvi_usd * property_tax_rate / 12` to the monthly mortgage payment.
 
 ## BLS QCEW
 

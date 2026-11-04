@@ -76,28 +76,87 @@ def price_to_income_change(start_year=2015):
     return d.sort_values("change", ascending=False)
 
 
-def mortgage_share_change(start_year=2015, down=0.10):
-    """Per metro: monthly principal and interest on the typical home (ZHVI, `down` paid
-    up front, 30-year fixed at that month's rate) over median household income / 12,
-    as the start year's average against the latest 12 months'. Leaves out taxes and
-    insurance; ACS income lags about a year, so recent shares run a little high."""
+# monthly cost of the typical home: principal and interest on ZHVI less `down`, 30-year
+# fixed at that month's rate, plus property tax at the ACS effective rate when $taxes = 1
+PAYMENT = """
+    select cbsa_code, month, median_household_income_usd income,
+        (1 - $down) * zhvi_usd * r / (1 - pow(1 + r, -360)) + $taxes * zhvi_usd * property_tax_rate / 12 payment
+    from (select *, mortgage_rate_pct / 1200 r from gold.mart_metro_month)
+"""
+
+
+def mortgage_share_change(start_year=2015, down=0.10, taxes=True):
+    """Per metro: the monthly payment on the typical home (PAYMENT; principal, interest
+    and, with `taxes`, property tax) over median household income / 12, as the start
+    year's average against the latest 12 months'. Leaves out insurance and HOA fees;
+    ACS income lags about a year, so recent shares run a little high."""
     d = q(
-        """
-        with m as (
-            select cbsa_code, month, mortgage_rate_pct / 1200 r,
-                (1 - $down) * zhvi_usd * r / (1 - pow(1 + r, -360)) / (median_household_income_usd / 12) share
-            from gold.mart_metro_month
-        )
+        f"""
+        with m as (select *, payment / (income / 12) share from ({PAYMENT}))
         select cbsa_code,
             avg(share) filter (year(month) = $y) start_share,
             avg(share) filter (month > $latest - interval 12 month and month <= $latest) latest_share
         from m group by all
         """,
-        {"y": start_year, "latest": LATEST, "down": down},
+        {"y": start_year, "latest": LATEST, "down": down, "taxes": int(taxes)},
     )
     d["change"] = d.latest_share - d.start_share
     d.index = d.pop("cbsa_code").map(METRO).rename("metro")
     return d.sort_values("latest_share", ascending=False)
+
+
+# lower bounds of the ACS B19001 income brackets (households_by_income)
+BRACKETS = (
+    np.array([0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 75, 100, 125, 150, 200]) * 1000
+)
+
+
+def share_above(income, households):
+    """Share of households with income at or above `income`, linear within a bracket.
+    shortcut: above $200k (the open top bracket) it returns the top bracket's share, an
+    upper bound; fit a Pareto tail if a needed income ever passes $200k."""
+    households = np.asarray(households, dtype=float)
+    below = np.concatenate([[0], np.cumsum(households[:-1])]) / households.sum()
+    return 1 - np.interp(income, BRACKETS, below)
+
+
+def affordable_share(start_year=2015, down=0.10, burden=0.30):
+    """Per metro: the income that keeps the typical home's monthly PAYMENT (with taxes)
+    at `burden` of income, and the share of households who earn it. The start year uses
+    its own ACS 1-year brackets and average payment; the latest 12 months use the
+    latest vintage's brackets, which lag about a year."""
+    d = q(
+        f"""
+        select cbsa_code,
+            avg(payment) filter (year(month) = $y) start_payment,
+            avg(payment) filter (month > $latest - interval 12 month and month <= $latest) latest_payment
+        from ({PAYMENT}) group by all
+        """,
+        {"y": start_year, "latest": LATEST, "down": down, "taxes": 1},
+    ).set_index("cbsa_code")
+    h = q(
+        """
+        select cbsa_code, acs_vintage, households_by_income from gold.fct_income
+        where geo_level = 'metro' and acs_vintage <= year($latest)
+        """,
+        {"latest": LATEST},
+    )
+    h = h[h.acs_vintage.isin([start_year, h.acs_vintage.max()])]
+    h = h.pivot(index="cbsa_code", columns="acs_vintage", values="households_by_income")
+    d["latest_vintage"] = h.columns.max()
+    for when, vintage in (("start", start_year), ("latest", h.columns.max())):
+        d[f"{when}_income_needed"] = d[f"{when}_payment"] * 12 / burden
+        d[f"{when}_share"] = [
+            share_above(need, h.loc[c, vintage])
+            for c, need in d[f"{when}_income_needed"].items()
+        ]
+    d["change"] = d.latest_share - d.start_share
+    d.index = d.index.map(METRO).rename("metro")
+    return d.sort_values("latest_share")
+
+
+# a bracket split evenly: half of the $50k-60k households are at $55k or more
+assert abs(share_above(55_000, [0] * 9 + [1] + [0] * 6) - 0.5) < 1e-9
 
 
 def permits_vs_growth(permit_years=(2016, 2025), growth_years=(2015, 2025)):

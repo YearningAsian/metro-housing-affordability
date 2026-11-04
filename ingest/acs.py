@@ -6,8 +6,12 @@ import pandas as pd
 
 from ingest.base import BaseExtractor, File, load_env
 
-# median household income, population, median gross rent, median gross rent as % of income
-VARIABLES = "NAME,B19013_001E,B01003_001E,B25064_001E,B25071_001E"
+# median household income, population, median gross rent, median gross rent as % of income, median owner home
+# value, median real estate taxes paid, and households in the 16 income brackets (B19001_002E to _017E)
+VARIABLES = (
+    "NAME,B19013_001E,B01003_001E,B25064_001E,B25071_001E,B25077_001E,B25103_001E,"
+    + ",".join(f"B19001_{i:03d}E" for i in range(2, 18))
+)
 GEOS = {
     "zcta": "zip code tabulation area:*",
     "county": "county:*",

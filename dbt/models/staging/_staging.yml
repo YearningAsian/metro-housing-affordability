@@ -134,6 +134,12 @@ models:
         description: "{{ doc('median_gross_rent_usd') }}"
       - name: rent_pct_income
         description: "{{ doc('rent_pct_income') }}"
+      - name: median_home_value_usd
+        description: "{{ doc('median_home_value_usd') }}"
+      - name: median_real_estate_taxes_usd
+        description: "{{ doc('median_real_estate_taxes_usd') }}"
+      - name: households_by_income
+        description: "{{ doc('households_by_income') }}"
 
   - name: stg_qcew__industry_10
     description: BLS QCEW all-industry totals by area, ownership and quarter. Suppressed cells (disclosure N) are null.

@@ -14,6 +14,8 @@ with vintages as (
         population,
         median_gross_rent_usd,
         rent_pct_income,
+        median_real_estate_taxes_usd / median_home_value_usd as property_tax_rate,
+        lead(median_real_estate_taxes_usd / median_home_value_usd) over w as next_tax_rate,
         lead(median_household_income_usd) over w as next_income,
         lead(population) over w as next_population,
         lead(median_gross_rent_usd) over w as next_rent,
@@ -47,6 +49,7 @@ select
     coalesce(median_gross_rent_usd + (next_rent - median_gross_rent_usd) * frac, median_gross_rent_usd)
         as median_gross_rent_usd,
     coalesce(rent_pct_income + (next_rent_pct - rent_pct_income) * frac, rent_pct_income) as rent_pct_income,
+    coalesce(property_tax_rate + (next_tax_rate - property_tax_rate) * frac, property_tax_rate) as property_tax_rate,
     acs_survey as income_acs_survey,
     acs_vintage as income_acs_vintage,
     next_start is null and year(month) > acs_vintage as income_is_carried_forward

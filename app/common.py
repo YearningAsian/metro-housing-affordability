@@ -38,12 +38,16 @@ def load(name, columns=None):
 
 
 def metro_month():
-    """The metro mart plus mortgage_share: monthly principal and interest on the typical
-    home (10% down, 30-year fixed at that month's rate) over median household income / 12,
-    as in notebooks/common.py. Leaves out taxes and insurance."""
+    """The metro mart plus mortgage_share: monthly principal, interest and property tax on
+    the typical home (10% down, 30-year fixed at that month's rate, tax at the ACS
+    effective rate) over median household income / 12, as in notebooks/common.py.
+    Leaves out insurance and HOA fees."""
     m = load("mart_metro_month.parquet").copy()
     r = m.mortgage_rate_pct / 1200
-    payment = 0.9 * m.zhvi_usd * r / (1 - (1 + r) ** -360)
+    payment = (
+        0.9 * m.zhvi_usd * r / (1 - (1 + r) ** -360)
+        + m.zhvi_usd * m.property_tax_rate / 12
+    )
     m["mortgage_share"] = payment / (m.median_household_income_usd / 12)
     return m
 

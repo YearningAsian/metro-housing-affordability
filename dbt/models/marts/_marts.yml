@@ -326,6 +326,9 @@ models:
       - &population {name: population, description: "{{ doc('population') }}"}
       - &median_gross_rent_usd {name: median_gross_rent_usd, description: "{{ doc('median_gross_rent_usd') }}"}
       - &rent_pct_income {name: rent_pct_income, description: "{{ doc('rent_pct_income') }}"}
+      - {name: median_home_value_usd, description: "{{ doc('median_home_value_usd') }}"}
+      - {name: median_real_estate_taxes_usd, description: "{{ doc('median_real_estate_taxes_usd') }}"}
+      - {name: households_by_income, description: "{{ doc('households_by_income') }}"}
 
   - name: fct_economy
     description: >
@@ -430,6 +433,9 @@ models:
       - *population
       - *median_gross_rent_usd
       - *rent_pct_income
+      - name: property_tax_rate
+        description: "{{ doc('property_tax_rate') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 0.05}}}]
       - {name: income_acs_vintage, description: "{{ doc('income_acs_vintage') }}"}
       - {name: income_acs_survey, description: "{{ doc('income_acs_survey') }}"}
       - {name: income_is_carried_forward, description: "{{ doc('income_is_carried_forward') }}"}

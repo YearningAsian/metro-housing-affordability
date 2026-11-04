@@ -42,5 +42,8 @@ select
     median_household_income_usd,
     population,
     median_gross_rent_usd,
-    rent_pct_income
+    rent_pct_income,
+    median_home_value_usd,
+    median_real_estate_taxes_usd,
+    households_by_income
 from places

@@ -43,5 +43,14 @@ select
     case when b19013_001e::double >= 0 then b19013_001e::double end as median_household_income_usd,
     case when b01003_001e::double >= 0 then b01003_001e::double end as population,
     case when b25064_001e::double >= 0 then b25064_001e::double end as median_gross_rent_usd,
-    case when b25071_001e::double >= 0 then b25071_001e::double end as rent_pct_income
+    case when b25071_001e::double >= 0 then b25071_001e::double end as rent_pct_income,
+    case when b25077_001e::double >= 0 then b25077_001e::double end as median_home_value_usd,
+    case when b25103_001e::double >= 0 then b25103_001e::double end as median_real_estate_taxes_usd,
+    -- B19001_002E to _017E: under $10k, $10k-15k, ... $150k-200k, $200k or more
+    [
+        {%- for i in range(2, 18) %}
+            case when b19001_{{ '%03d' % i }}e::double >= 0 then b19001_{{ '%03d' % i }}e::double end
+            {%- if not loop.last %},{% endif %}
+        {%- endfor %}
+    ] as households_by_income
 from unioned

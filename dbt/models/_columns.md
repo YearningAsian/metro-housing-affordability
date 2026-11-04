@@ -46,6 +46,10 @@ Column descriptions shared by the int_ models and the marts, referenced from the
 {% docs population %}ACS 5-year total population.{% enddocs %}
 {% docs median_gross_rent_usd %}ACS 5-year median gross rent (rent plus utilities), in dollars per month.{% enddocs %}
 {% docs rent_pct_income %}ACS 5-year median gross rent as a percentage of household income.{% enddocs %}
+{% docs median_home_value_usd %}ACS median value of owner-occupied homes (B25077), in dollars, as owners report it.{% enddocs %}
+{% docs median_real_estate_taxes_usd %}ACS median real estate taxes paid by owner-occupied homes (B25103), in dollars per year; top-coded at 10,000.{% enddocs %}
+{% docs households_by_income %}ACS households in the 16 B19001 income brackets, in order: under $10k, $10k-15k, $15k-20k, $20k-25k, $25k-30k, $30k-35k, $35k-40k, $40k-45k, $45k-50k, $50k-60k, $60k-75k, $75k-100k, $100k-125k, $125k-150k, $150k-200k, $200k or more.{% enddocs %}
+{% docs property_tax_rate %}Effective property tax rate: ACS median real estate taxes over ACS median owner home value, as a fraction of value per year. In the monthly models it moves in a straight line between vintages.{% enddocs %}
 {% docs income_acs_vintage %}ACS vintage (its last year) the income values start from; it is pinned to January of that year, and later months move toward the next vintage.{% enddocs %}
 
 {% docs income_acs_survey %}ACS survey of the income values: acs1 (1-year, metros) or acs5 (5-year, ZIPs).{% enddocs %}
