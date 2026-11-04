@@ -7,7 +7,7 @@ the segments that run long. Every number comes from the [findings log](findings.
 September 2026; recheck them after the next pipeline run.
 
 **The one thing a viewer should repeat:** since 2015 every one of the 11 metros got less affordable, and Austin,
-which built the most, barely moved.
+which built the most, lost the least ground.
 
 ## Footage to prepare
 
@@ -27,8 +27,8 @@ Record each segment as its own take; it is easier to cut.
 
 **On screen:** the bar chart race, ending on September 2026.
 
-In 2015, the typical home in Seattle cost about four point nine years of the median household's income. Today it
-costs six point three. That's the biggest jump among eleven of the fastest-growing metros in the country. And Seattle
+In 2015, the typical home in Seattle cost about four and a half years of the median household's income. Today it
+costs six point one. That's the biggest jump among eleven of the fastest-growing metros in the country. And Seattle
 isn't alone: every one of the eleven got less affordable. Here's how I measured it, and what I found.
 
 ## 2. The question and the metros (0:30–1:00)
@@ -57,15 +57,15 @@ There's no server to keep running.
 **On screen:** `deck/price_to_income_change.png`.
 
 First, the affordability race. Price-to-income is the typical home value divided by median household income: how
-many years of income a home costs. It rose in all eleven metros. Seattle rose most, by one point four four years,
-with Nashville close behind. Austin barely moved, up zero point zero four, because it gave back its whole 2022 spike.
+many years of income a home costs. It rose in all eleven metros. Seattle rose most, by one point six years,
+with Nashville next. Austin rose least, up zero point three, after giving back most of its 2022 spike.
 
 **On screen:** `deck/permits_vs_growth.png`.
 
-Why Austin? It built. Austin permitted fifteen homes per thousand residents a year, the most of any metro, and its
-home values grew the least: fifty-seven percent over the decade. Across all eleven metros, more permits went with
-slower price growth, a correlation of minus point five five. But take Austin out and it nearly vanishes, to minus
-point one. With eleven metros, that's a story about Austin, not proof of a law.
+Why Austin? It built. Austin permitted almost sixteen homes per thousand residents a year, the most of any metro, and
+its home values grew the least: fifty-seven percent over the decade. Across all eleven metros, more permits went with
+slower price growth, a correlation of minus point five four. But take Austin out and it nearly vanishes, to minus
+point zero eight. With eleven metros, that's a story about Austin, not proof of a law.
 
 **On screen:** `q3_origin_home_values.png`.
 
@@ -114,14 +114,14 @@ but a plain momentum rule does nearly as well. So the dashboard shows these as r
 **On screen:** the findings log's caveats, then an end card with the repo, dashboard, findings log and model card
 links.
 
-The limits. Census income lags about two years, so the latest ratios run a little high. Zillow's rents are asking
+The limits. Census income lags about a year, so the latest ratios run a little high. Zillow's rents are asking
 rents for new leases, not what current tenants pay. Eleven metros are too few for correlations to be more than
 descriptive. And none of this is investment advice: a "hot" ZIP is often where people get priced out.
 
 Next, I'd like a forecast that copes with a flat market, and a deep dive into one city's 311 calls.
 
 So, the one thing to remember: since 2015, every one of these eleven metros got less affordable, and the one that
-built the most, Austin, barely moved. The code, the dashboard, the findings and the model card are all linked
+built the most, Austin, lost the least ground. The code, the dashboard, the findings and the model card are all linked
 below.
 
 ## YouTube chapters
@@ -148,8 +148,8 @@ Set the timestamps to the final edit before uploading; YouTube needs the first c
 **On screen:** `affordability_race_vertical.mp4` for the first 20 seconds, then the deck charts cropped to 1080×1920.
 
 Eleven of America's fastest-growing metros. Every one got less affordable since 2015. In Seattle, the typical home
-went from 4.9 years of median income to 6.3. Austin barely moved. Why? It built more housing than anywhere else,
-fifteen homes per thousand residents a year, and its prices grew the least. Meanwhile in Atlanta, rents rose 81%
+went from 4.5 years of median income to 6.1. Austin rose least. Why? It built more housing than anywhere else,
+almost sixteen homes per thousand residents a year, and its prices grew the least. Meanwhile in Atlanta, rents rose 81%
 while wages rose 53%. I built a pipeline that pulls eleven public data sources every month, rebuilds the warehouse,
 retrains two models and updates a live dashboard, with no server to run. The full video and the code are linked in
 the comments.
