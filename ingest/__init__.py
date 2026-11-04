@@ -7,6 +7,7 @@ from ingest.hud_crosswalk import HUDCrosswalk
 from ingest.hud_fmr import HUDFMR
 from ingest.irs_migration import IRSMigration
 from ingest.qcew import QCEW
+from ingest.realtor import Realtor
 from ingest.redfin import Redfin
 from ingest.zillow import Zillow
 
@@ -24,5 +25,6 @@ EXTRACTORS = {
         HUDCrosswalk,
         CensusGeo,
         FEMANRI,
+        Realtor,
     )
 }

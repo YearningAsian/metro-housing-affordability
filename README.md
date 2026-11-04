@@ -13,7 +13,7 @@ refreshed every month.
 
 ## Summary
 
-A monthly pipeline pulls 12 free public sources (Zillow, Redfin, Census, BLS, FRED, IRS, HUD, FEMA) for 11 fast-growing US
+A monthly pipeline pulls 13 free public sources (Zillow, Redfin, Realtor.com, Census, BLS, FRED, IRS, HUD, FEMA) for 11 fast-growing US
 metros and 1,436 ZIP codes, January 2015 to September 2026. Python loaders write bronze Parquet; dbt on DuckDB builds
 tested silver tables and gold marts; LightGBM models forecast ZIP growth and flag likely hot ZIPs, logged to MLflow;
 GitHub Actions reruns everything on the 20th of each month, keeps state in Cloudflare R2, and publishes the exports to
@@ -21,7 +21,7 @@ GitHub Pages for a Streamlit dashboard.
 
 ```mermaid
 flowchart LR
-    src["12 public sources<br/>Zillow, Redfin, Census, BLS,<br/>FRED, IRS, HUD, FEMA"] --> bronze["Python loaders<br/>bronze Parquet"]
+    src["13 public sources<br/>Zillow, Redfin, Realtor.com, Census,<br/>BLS, FRED, IRS, HUD, FEMA"] --> bronze["Python loaders<br/>bronze Parquet"]
     bronze --> dbt["dbt on DuckDB<br/>silver tables, gold marts"]
     dbt --> ml["LightGBM forecast<br/>and hot-ZIP flags<br/>(MLflow)"]
     ml --> dbt
@@ -105,6 +105,7 @@ All free and public; no scraping.
 | [Census CBSA delineations](https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html) | County to metro |
 | [Census cartographic boundaries](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | Map shapes |
 | [FEMA National Risk Index](https://www.fema.gov/about/openfema/data-sets/national-risk-index-data) | County climate risk (Q10 only) |
+| [Realtor.com Economic Research](https://www.realtor.com/research/data/) | Listings and price cuts (turning-point backtest only) |
 
 Keys, units, release lags and quirks for each source are in the [data dictionary](docs/data_dictionary.md), backed by the [profiling notebook](notebooks/02_source_profiling.ipynb).
 
@@ -114,7 +115,7 @@ Every dbt test and its reason are in [data quality](docs/data_quality.md).
 
 The answers so far, each with its number, chart and caveats, are in the [findings log](docs/findings.md). The analysis notebooks (`notebooks/09_*.ipynb`) read only the gold marts; rerun them with `uv run jupyter nbconvert --to notebook --execute --inplace notebooks/09_*.ipynb`.
 
-The [forecast backtest](docs/forecast_report.md) compares a LightGBM model of 12-month ZIP home value growth with simple baselines, on point-in-time features (`ml.features_zip_month`). Rerun it with `uv run --group ml --group dev python -m ml.forecast`.
+The [forecast backtest](docs/forecast_report.md) compares a LightGBM model of 12-month ZIP home value growth with simple baselines, on point-in-time features (`ml.features_zip_month`). Rerun it with `uv run --group ml --group dev python -m ml.forecast`. A separate [turning-point backtest](docs/forecast_report.md#turning-points) (`python -m ml.turning_points`) asks whether a metro-wide decline can be called in advance; it could not.
 
 The [neighborhood clusters](docs/clusters_report.md) group the study ZIPs into six named types by their last 12 months of prices, rents, permits, sales speed and migration (`ml.zip_clusters`), and track how ZIPs moved since 2019. Rerun them with `uv run --group ml --group dev python -m ml.clusters`.
 

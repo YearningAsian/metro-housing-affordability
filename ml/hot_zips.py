@@ -27,7 +27,7 @@ FITS = {
 BLUE, RED, GRAY, INK = "#2a78d6", "#e34948", "#c3c2b7", "#52514e"
 
 
-def fit_logit(train, cols):
+def fit_logit(train, cols, label="target_top20"):
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
@@ -38,7 +38,7 @@ def fit_logit(train, cols):
         StandardScaler(),
         LogisticRegression(max_iter=2000),
     )
-    return model.fit(train[cols], train.target_top20.astype(int))
+    return model.fit(train[cols], train[label].astype(int))
 
 
 def fit_classifier(train, cols):

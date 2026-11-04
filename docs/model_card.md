@@ -115,6 +115,9 @@ autumn 2027, once Zillow publishes September 2027.
   Orlando, higher risk does not go with larger falls, and Austin fell as much with almost no hurricane risk
   ([findings Q10](findings.md#q10-does-climate-risk-explain-the-tampa-and-orlando-declines)). The index is not a
   feature: the release used here (December 2025) postdates the training months.
+- **Turns:** a separate metro model of whether values will be lower in 12 months called none of 73 declines in its
+  backtest, having trained on one cycle ([turning points](forecast_report.md#turning-points)). It is not published, and
+  nothing here warns of a metro-wide turn.
 - **Overlapping outcomes:** consecutive months share most of a 12-month window, so the backtest's test months are
   far from independent; a further year could reorder the models.
 - **Coverage:** 11 metros only; the models have not been tested anywhere else.

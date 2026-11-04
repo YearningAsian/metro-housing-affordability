@@ -107,3 +107,47 @@ models:
         data_tests:
           - not_null
           - accepted_values: {arguments: {values: [train, validate, test, score]}}
+
+  - name: features_metro_month
+    description: >
+      One row per study metro and month t where Realtor.com's year-on-year figures exist, for the turning-point model
+      (ml/turning_points.py): features as they could be known on prediction_date and whether ZHVI was lower 12 months
+      later. Each source joins on its release date; the test assert_metro_features_point_in_time checks this. Zillow
+      and Realtor.com values are their latest restatement.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "cbsa_code || month"
+    columns:
+      - name: cbsa_code
+        description: "{{ doc('cbsa_code') }}"
+        data_tests: [not_null]
+      - name: month
+        description: Month t the row describes.
+        data_tests: [not_null]
+      - name: prediction_date
+        description: The day the prediction is made, the 20th of the month after t.
+        data_tests: [not_null]
+      - name: zhvi_growth_12m
+        description: The metro's ZHVI change over the 12 months to t, as a fraction.
+        data_tests: [not_null]
+      - name: mortgage_rate_change_12m
+        description: Change in the 30-year mortgage rate over 12 months to the latest complete month, percentage points.
+        data_tests: [not_null]
+      - name: realtor_month
+        description: Month of the Realtor.com values, t-1 under the release lag.
+        data_tests: [not_null]
+      - name: active_listing_count_yy
+        description: Year-on-year change in active listings in realtor_month, as a fraction.
+      - name: price_reduced_share_yy
+        description: Year-on-year difference in the share of listings with a price cut, in fractional points.
+      - name: median_days_on_market_yy
+        description: Year-on-year change in median days on market, as a fraction.
+      - name: zillow_available_on
+        description: >
+          Release date of the Zillow values (the 15th of the month after t). mortgage_ and realtor_available_on
+          likewise; none is after prediction_date.
+      - name: target_growth_12m
+        description: ZHVI change from t to t+12 months; null when t+12 is past the data.
+      - name: target_negative
+        description: True when target_growth_12m is below zero; null when it is not known.

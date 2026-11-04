@@ -9,7 +9,7 @@ years of income to buy than it did in 2015.
 
 I wanted to know three things. How much worse did it get, and where? Did the metros that built more housing do
 better? And can you see which neighborhoods will jump next before they do? To answer them I built a pipeline that
-pulls 12 free public sources every month, from Zillow and Redfin to the Census, the Bureau of Labor Statistics, the
+pulls 13 free public sources every month, from Zillow and Redfin to the Census, the Bureau of Labor Statistics, the
 IRS and HUD, and turns them into one tested table per metro-month and per ZIP-month: 1,436 ZIP codes, January 2015 to
 September 2026.
 
@@ -87,7 +87,7 @@ and zoning, which the data does not have.
 
 ```mermaid
 flowchart LR
-    src["12 public sources"] --> bronze["Python loaders<br/>bronze Parquet"]
+    src["13 public sources"] --> bronze["Python loaders<br/>bronze Parquet"]
     bronze --> dbt["dbt on DuckDB<br/>silver tables, gold marts"]
     dbt --> ml["LightGBM forecast<br/>and hot-ZIP flags"]
     ml --> dbt

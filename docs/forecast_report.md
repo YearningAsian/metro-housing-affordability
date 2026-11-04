@@ -145,6 +145,48 @@ the median ZIP's 80% interval bound after CQR.
 - **Seattle:** LightGBM was too low in 2023 (it forecast −4% from July 2023; values rose 5%) and too high in 2024–2025
   (+4% to +6% forecast against 0% to −2%). In both cases it followed recent metro momentum one turn too long.
 
+## Turning points
+
+Can the metro-wide turn be called in advance? [`ml/turning_points.py`](../ml/turning_points.py) is a separate,
+backtest-only model of whether a metro's ZHVI will be lower 12 months on, from
+[`ml.features_metro_month`](../dbt/models/ml/_ml.yml). Each quarter is an origin; logistic regressions see only outcomes
+published by then, and origins start once training holds a decline (April 2023 to July 2025). That gives 110
+metro-quarters, 73 of them followed by a decline (66%). They are far from independent: 11 metros, 10 origins and one
+national cycle.
+
+The models add to each other: 12-month growth alone, then the 12-month change in the mortgage rate (not its level),
+then Realtor.com's year-on-year listings, price cuts and days on market. Persistence is the simple baseline: what is
+falling now stays falling. "Turns" keeps the 57 rows still growing at the origin, 37 of them followed by a decline.
+
+| Rows | Model | AUC within origin | Brier | Precision at 0.5 | Recall at 0.5 |
+| --- | --- | --- | --- | --- | --- |
+| All | Persistence | 0.670 | 0.491 | 0.679 | 0.493 |
+| All | Growth | 0.173 | 0.587 | none called | 0 |
+| All | Growth + rates | 0.173 | 0.631 | none called | 0 |
+| All | Growth + rates + Realtor.com | 0.475 | 0.614 | none called | 0 |
+| Turns | Persistence | 0.500 | 0.649 | none called | 0 |
+| Turns | Growth | 0.448 | 0.589 | none called | 0 |
+| Turns | Growth + rates | 0.448 | 0.633 | none called | 0 |
+| Turns | Growth + rates + Realtor.com | 0.647 | 0.632 | none called | 0 |
+
+AUC ranks the metros inside each origin with both outcomes: 5 origins for all rows, 2 for turns. The mortgage rate is
+one national number, so it cannot change that ranking. A constant forecast of 0.5 would score a Brier of 0.25.
+
+**No model works as a warning.** None of the regressions called a single one of the 73 declines at 0.5. Persistence
+called 53 and was right on 36, a precision of 0.68 against a 66% base rate. Every model's Brier is worse than the
+constant's.
+
+The likely reason is that the only earlier decline in the data looks unlike the next one. Declines enter training from
+early 2023, all from the 2022 rate shock. In the April 2023 fit, higher growth and rising rates both push the score up.
+The 2024-2025 declines came with much slower growth and little change in rates, and the mean score at each origin stays
+at 0.15 or below through July 2025. The positive coefficient on growth also fits the growth model's AUC of 0.17, which is worse than chance.
+
+Realtor.com improves the ranking on turns (0.647 against 0.448), but on 2 origins and 57 rows that is not evidence.
+Three checks, none in the repo, did not change the conclusion: balancing the class weights (at most one correct call),
+dropping rows Realtor.com flags from training (one correct call) and dropping Nashville's distorted rows from training
+(no calls). The model stays out of the monthly run. It would need a second full housing cycle, or many more metros,
+to train on more than one kind of decline.
+
 ## Limits
 
 - Zillow restates past months, and the warehouse keeps only the latest release, so the backtest's inputs are a little

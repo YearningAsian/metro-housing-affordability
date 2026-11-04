@@ -100,3 +100,5 @@ sources:
       - name: fema_nri__counties
         description: FEMA National Risk Index by county, v1.20 (December 2025).
         config: *static
+      - name: realtor__metro_inventory
+        description: Realtor.com research inventory by metro, monthly since July 2016.

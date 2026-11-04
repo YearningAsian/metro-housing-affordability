@@ -346,3 +346,41 @@ models:
         description: Expected annual building loss from inland (river and rain) flooding, dollars.
       - name: wildfire_eal_buildings_usd
         description: Expected annual building loss from wildfire, dollars.
+
+  - name: stg_realtor__metro_inventory
+    description: >
+      Realtor.com research inventory by CBSA and month, from July 2016. Source: Realtor.com Economic Research. The
+      warehouse keeps the latest release only.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "cbsa_code || month"
+    columns:
+      - name: cbsa_code
+        description: "{{ doc('cbsa_code') }}"
+        data_tests: [not_null]
+      - name: cbsa_title
+        description: CBSA name as Realtor.com gives it.
+      - name: month
+        description: First day of the month.
+        data_tests: [not_null]
+      - name: median_listing_price_usd
+        description: Median list price of active listings, dollars.
+      - name: active_listing_count
+        description: Homes actively listed for sale in the month.
+      - name: active_listing_count_yy
+        description: Year-on-year change in active listings, as a fraction. Null in a CBSA's first 12 months.
+      - name: new_listing_count
+        description: Homes newly listed in the month.
+      - name: median_days_on_market
+        description: Median days a listing has been on the market.
+      - name: median_days_on_market_yy
+        description: Year-on-year change in median days on market, as a fraction.
+      - name: price_reduced_share
+        description: Share of active listings with a price cut in the month, as a fraction.
+      - name: price_reduced_share_yy
+        description: Year-on-year difference in price_reduced_share, in fractional points.
+      - name: is_quality_flagged
+        description: >
+          Realtor.com's quality_flag = 1. The data page does not define it; see the data dictionary. Null before
+          July 2017.

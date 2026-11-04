@@ -28,6 +28,7 @@ CASES = [
     ("census_geo", "list1_2023.xlsx", 2),
     ("census_geo", "cb_2024_us_county_500k.zip", 2),
     ("fema_nri", "NRI_Table_Counties.zip", 2),
+    ("realtor", "RDC_Inventory_Core_Metrics_Metro_History.csv", 2),
 ]
 
 

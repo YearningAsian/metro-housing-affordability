@@ -328,6 +328,26 @@ Shapefiles from `https://www2.census.gov/geo/tiger/GENZ{year}/shp/`: `cb_2024_us
 | `ALAND`, `AWATER` | BIGINT | square metres | Land and water area. |
 | `geom` | GEOMETRY | polygon | Shape (simplified, 1:500,000). |
 
+## Realtor.com inventory
+
+File `RDC_Inventory_Core_Metrics_Metro_History.csv` from [Realtor.com Economic Research](https://www.realtor.com/research/data/), who ask to be credited when quoted: CBSA by month from July 2016, 113,775 rows, 47 columns. A rolling file, re-fetched monthly. Staging (`stg_realtor__metro_inventory`) keeps the listing counts, days on market, price cuts and the quality flag. The ZIP file (`RDC_Inventory_Core_Metrics_Zip_History.csv`, 837 MB) is not loaded; the only model using this source is metro-level.
+
+**Quirks.**
+
+- No fixed release date: September 2026 came out on 30 September, and October was not out by 4 November. `features_metro_month` allows two months.
+- `_yy` columns are a fractional change for counts and days, and a difference in fractional points for shares. Days-on-market `_yy` can differ from the rounded levels in the file, by up to 0.36 where days were in single digits.
+- `quality_flag` is not defined on the data page. In the 11 study metros it is 1 in 116 rows, all from January 2021 to June 2023, and in all 11 metros from February to April 2023. In that window, flagged rows have larger moves: a median absolute change in listings of 110% against 44%.
+- Nashville's listings fall from 8,275 in April 2017 to 6,118 in May 2017, a 26% drop when no other study metro falls more than 3%, so its `active_listing_count_yy` is distorted until April 2018 (-23%, then +13% in May). The rows are kept.
+
+| Column | Type | Unit | Definition |
+| --- | --- | --- | --- |
+| `month_date_yyyymm` | VARCHAR | YYYYMM | Month. |
+| `cbsa_code` | VARCHAR(5) | CBSA | Metro key. |
+| `active_listing_count` | DOUBLE | count | Homes actively listed for sale. |
+| `median_days_on_market` | DOUBLE | days | Median days on market. |
+| `price_reduced_share` | DOUBLE | fraction | Share of active listings with a price cut. |
+| `quality_flag` | DOUBLE | 0 or 1 | Publisher's flag, undefined; see above. |
+
 ## FEMA National Risk Index
 
 File `NRI_Table_Counties.zip` from OpenFEMA (`https://www.fema.gov/about/reports-and-data/openfema/nri/v120/`), v1.20, December 2025: 3,232 counties, 465 columns. The old `hazards.fema.gov` links now redirect to an HTML page. Bronze keeps every column; staging (`stg_fema_nri__counties`) keeps the composite scores and the building losses for the four hazards that matter in the study metros. One fixed release, fetched once; a new release has a new URL.
@@ -389,7 +409,7 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 
 ## Ingestion: raw, bronze and the load log
 
-`.\tasks.ps1 ingest [source ...]` (or `uv run python -m ingest`) runs the extractors in `ingest/`. Sources: `zillow`, `redfin`, `bps`, `acs`, `qcew`, `fred`, `irs_migration`, `hud_fmr`, `hud_crosswalk`, `census_geo` (delineation and boundaries), `fema_nri` (National Risk Index).
+`.\tasks.ps1 ingest [source ...]` (or `uv run python -m ingest`) runs the extractors in `ingest/`. Sources: `zillow`, `redfin`, `bps`, `acs`, `qcew`, `fred`, `irs_migration`, `hud_fmr`, `hud_crosswalk`, `census_geo` (delineation and boundaries), `fema_nri` (National Risk Index), `realtor` (metro inventory).
 
 - **Raw**: every download lands unchanged in `data/raw/<source>/<load_date>/<file>`.
 - **Bronze**: each file becomes `data/bronze/<source>/<entity>/<file_stem>__<load_date>.parquet`. Every source column is text (boundary `geom` is WKB), plus `_source_file`, `_load_id`, `_loaded_at` (UTC) and `_file_hash`. JSON APIs are flattened: ACS adds `vintage`, FRED adds `series_id`, HUD crosswalk adds `year` and `quarter`.
