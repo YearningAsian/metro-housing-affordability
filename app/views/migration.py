@@ -31,7 +31,14 @@ top = o.nlargest(TOP, "people")
 places = load("centroids.parquet").set_index(["kind", "code"])
 end = places.loc[("metro", code)]
 top = top.join(places.loc["county"], on="origin_county_fips").dropna(subset=["lat"])
-lat, lon = [*top.lat, end.lat], [*top.lon, end.lon]
+# zoom to the nearest origins that sent about 80% of the top origins' people, so a
+# far-off county or two doesn't shrink the map to a continent
+dist = (top.lat - end.lat) ** 2 + (
+    (top.lon - end.lon) * math.cos(math.radians(end.lat))
+) ** 2
+near = top.loc[dist.sort_values().index]
+near = near[near.people.cumsum().shift(fill_value=0) < 0.8 * near.people.sum()]
+lat, lon = [*near.lat, end.lat], [*near.lon, end.lon]
 
 st.subheader(f"Top {TOP} origin counties, moves in {move_year}")
 fig = go.Figure()
@@ -78,6 +85,48 @@ fig.update_layout(
     }
 )
 chart(style(fig, height=520))
+st.caption(
+    "The map frames the nearest origins, which sent about 80% of these movers; "
+    "lines to farther ones may run off the edge."
+)
+
+st.subheader("Were they moving somewhere cheaper?")
+st.caption(
+    f"Typical home value in each origin county ÷ {name}'s. Right of the line: homes "
+    f"cost more where they came from. Dot size: people."
+)
+dots = top.dropna(subset=["origin_to_metro_zhvi"]).sort_values("people")
+fig = go.Figure(
+    go.Scatter(
+        x=dots.origin_to_metro_zhvi,
+        y=dots.origin_name,
+        mode="markers+text",
+        marker={
+            "color": BLUE,
+            "size": 8 + 16 * dots.people / dots.people.max(),
+            "line": {"color": "white", "width": 2},
+        },
+        text=[f"{v:.2f}×" for v in dots.origin_to_metro_zhvi],
+        textposition="middle right",
+        cliponaxis=False,
+        textfont={"color": INK2},
+        customdata=dots.people,
+        hovertemplate="%{y}: homes %{x:.2f}× " + name + "'s, "
+        "%{customdata:,.0f} people<extra></extra>",
+    )
+)
+fig.add_vline(x=1, line_color=INK2, line_width=1)
+hi = max(2, dots.origin_to_metro_zhvi.max() * 1.15)  # room for the labels
+chart(
+    style(
+        fig,
+        height=max(200, 30 * len(dots) + 60),
+        xaxis_range=[0, hi],
+        xaxis_ticksuffix="×",
+        yaxis_showgrid=False,
+        margin={"l": 8, "r": 48, "t": 8, "b": 8},  # room for the last label
+    )
+)
 
 st.dataframe(
     top[["origin_name", "people", "agi_per_return_usd", "origin_to_metro_zhvi"]],
@@ -99,7 +148,4 @@ st.dataframe(
     },
 )
 
-footer(
-    "IRS SOI county-to-county migration, Zillow ZHVI (county and metro home values), "
-    "Census county boundaries 2024"
-)
+footer(["irs", "zillow"], "Census county boundaries 2024")

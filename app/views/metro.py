@@ -18,12 +18,17 @@ from common import (
     style,
 )
 
+MIN_SALES = 24  # Redfin sales in 12 months: about 2 a month
+
 
 @st.cache_data(ttl="1d")
 def zip_growth():
     """Per ZIP: typical home value growth from the 2015 average to the latest 12 months'
-    average (the Overview's window)."""
-    z = load("mart_zip_month.parquet")[["zip", "cbsa_code", "month", "zhvi_usd"]]
+    average (the Overview's window), and Redfin home sales in those 12 months."""
+    z = load(
+        "mart_zip_month.parquet",
+        columns=["zip", "cbsa_code", "month", "zhvi_usd", "homes_sold"],
+    )
     recent = z.month > latest_month() - pd.DateOffset(months=12)
     g = pd.DataFrame(
         {
@@ -32,6 +37,7 @@ def zip_growth():
             "cbsa_code": z.groupby("zip").cbsa_code.first(),
         }
     ).dropna()
+    g["sales"] = z[recent].groupby("zip").homes_sold.sum().reindex(g.index).fillna(0)
     g["growth"] = g.latest / g.start - 1
     return g.reset_index()
 
@@ -46,14 +52,18 @@ mm = m[m.cbsa_code == code].set_index("month")
 st.subheader(f"Home value growth by ZIP code, 2015 to {latest:%B %Y}")
 g = zip_growth()
 g = g[g.cbsa_code == code]
+thin = g.sales < MIN_SALES
 st.caption(
     f"Typical home value in the 12 months to {latest:%B %Y} against the 2015 average. "
-    f"Median ZIP: {g.growth.median():+.0%}. ZIPs without a 2015 value are left blank."
+    f"Median ZIP: {g[~thin].growth.median():+.0%}. ZIPs without a 2015 value are left "
+    f"blank. {thin.sum()} ZIPs with fewer than {MIN_SALES} Redfin sales in those 12 "
+    "months are gray: Zillow's value there rests on few sales and can swing on noise."
 )
 centre = load("centroids.parquet").query("kind == 'metro' and code == @code").iloc[0]
+shapes = load("zip_shapes.geojson")
 fig = px.choropleth_map(
-    g,
-    geojson=load("zip_shapes.geojson"),
+    g[~thin],
+    geojson=shapes,
     locations="zip",
     featureidkey="properties.zip",
     color="growth",
@@ -71,6 +81,17 @@ fig.update_traces(
     "typical home $%{customdata[0]:,.0f}<extra></extra>",
 )
 fig.update_coloraxes(colorbar={"title": "", "tickformat": "+.0%", "thickness": 12})
+fig.add_choroplethmap(
+    geojson=shapes,
+    locations=g[thin].zip,
+    featureidkey="properties.zip",
+    z=g[thin].sales,
+    colorscale=[MUTED, MUTED],
+    showscale=False,
+    marker={"opacity": 0.85, "line": {"width": 0.3, "color": "white"}},
+    hovertemplate="ZIP %{location}: %{z:.0f} sales in 12 months, too few to "
+    "rate<extra></extra>",
+)
 chart(style(fig, height=520))
 
 left, right = st.columns(2, gap="large")
@@ -136,7 +157,4 @@ with right:
         )
     chart(style(fig, hovermode="closest"))
 
-footer(
-    "Zillow ZHVI (home values), BLS QCEW (wages), Census Building Permits Survey and "
-    "ACS 5-year population (permits per 1,000), Census ZCTA boundaries 2020"
-)
+footer(["zillow", "redfin", "qcew", "bps", "acs"], "Census ZCTA boundaries 2020")

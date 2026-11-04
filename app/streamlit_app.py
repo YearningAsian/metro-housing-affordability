@@ -13,6 +13,7 @@ st.navigation(
         ),
         st.Page("views/migration.py", title="Migration", icon=":material/moving:"),
         st.Page("views/forecasts.py", title="Forecasts", icon=":material/trending_up:"),
+        st.Page("views/findings.py", title="Findings", icon=":material/insights:"),
     ],
     position="top",
 ).run()

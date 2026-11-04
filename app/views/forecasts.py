@@ -15,10 +15,12 @@ except OSError:  # the published exports predate the forecast mart
     f = None
 if f is None or f.empty:
     st.info("Forecasts appear here after the next monthly pipeline run.")
-    footer("Zillow ZHVI, the project's monthly model")
+    footer(["zillow"], "the project's monthly model")
     st.stop()
 
 code, name = pick_metro()
+done = f[f.actual_growth_12m.notna()]  # forecasts whose 12 months have passed
+first = f.month.min()
 f = f[(f.cbsa_code == code) & (f.month == f.month.max())]
 month = f.month.max()
 st.subheader(
@@ -102,7 +104,45 @@ st.dataframe(
         ),
     },
 )
+st.subheader("Track record")
+if done.empty:
+    st.caption(
+        "No live forecast has reached its 12 months yet; the first, made for "
+        f"{first:%B %Y}, can be scored from {first.replace(year=first.year + 1):%B %Y}. "
+        "Until then, the 2024-2025 backtest (docs/forecast_report.md and "
+        "docs/model_card.md) is the record:"
+    )
+    model_mae, naive_mae, hit, n = 3.63, 2.84, 0.405, None
+else:
+    model_mae = 100 * (done.growth_pred - done.actual_growth_12m).abs().mean()
+    naive_mae = 100 * done.actual_growth_12m.abs().mean()  # no change: 0% growth
+    hit = done[done.hot_flag].actual_top20.mean()
+    n = done.month.nunique()
+    st.caption(
+        f"Every ZIP forecast whose 12 months have passed: {len(done):,} forecasts "
+        f"from {n} model run{'s' if n > 1 else ''}, all metros."
+    )
+a, b, c = st.columns(3)
+a.metric(
+    "Model error",
+    f"{model_mae:.2f} pts",
+    help="Mean absolute error of the 12-month growth forecast, in percentage points.",
+)
+b.metric(
+    "No-change error",
+    f"{naive_mae:.2f} pts",
+    help="The same error for a "
+    "forecast of no change. Lower than the model's means no change did better.",
+)
+c.metric(
+    "Flagged ZIPs that landed in the top 20%",
+    f"{hit:.0%}",
+    help="Against 20% for a random pick.",
+)
+if n is None:
+    st.caption("In the backtest the band held 94% of outcomes against its 80% aim.")
+
 footer(
-    "Zillow ZHVI and the project's point-in-time features; model details in "
-    "docs/model_card.md"
+    ["zillow"],
+    "the project's point-in-time features; model details in docs/model_card.md",
 )

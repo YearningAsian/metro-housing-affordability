@@ -14,7 +14,9 @@ sys.path.insert(0, str(APP))
 import common
 
 
-@pytest.mark.parametrize("page", ["overview", "metro", "migration", "forecasts"])
+@pytest.mark.parametrize(
+    "page", ["overview", "metro", "migration", "forecasts", "findings"]
+)
 def test_page_runs_on_sample(page, monkeypatch, tmp_path):
     monkeypatch.setattr(common, "LOCAL", tmp_path)  # no data/export
     monkeypatch.setattr(common, "REMOTE", str(APP.parent / "sample"))
