@@ -234,6 +234,9 @@ Part C turns raw files into two tested, analysis-ready tables that refresh thems
 
 **Deliverable:** the scheduled workflow. **Done when:** two scheduled runs in a row succeed with no manual fixes.
 
+> Not yet met (November 2026): no scheduled run has happened yet. The
+> first is due on 20 November 2026 and the second on 20 December 2026.
+
 **Gate C:** clean, tested marts refresh on their own.
 
 ## Part D: Analysis and visualization (Phases 9–10, weeks 10–12)
