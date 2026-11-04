@@ -177,6 +177,27 @@ def conformalize(out):
     return out
 
 
+def reconcile(out, weights):
+    """LightGBM's ZIP spread around the ETS metro level: shift each metro-origin so its weighted mean growth is ETS's."""
+    # shortcut: weights are ZHVI levels, not homes x value, since the features have no home count; forecast_report.md
+    # gives the MAE under other weights. Upgrade if ZIP housing units join the features.
+    g = out.assign(w=weights, wl=weights * out.lgbm).groupby(
+        ["cbsa_code", "month"], observed=True
+    )
+    return out.lgbm + out.ets - g.wl.transform("sum") / g.w.transform("sum")
+
+
+def error_parts(d, models):
+    """MAE of the metro-month average forecast (metro-wide) and of each ZIP's gap from that average (within-metro)."""
+    g = d.groupby(["cbsa_code", "month"], observed=True)
+    wide, within = {}, {}
+    for m in models:
+        gap = g[m].transform("mean") - g.y.transform("mean")
+        wide[m] = gap.abs().mean() * 100
+        within[m] = (d[m] - d.y - gap).abs().mean() * 100
+    return pd.DataFrame({"metro_wide": wide, "within_metro": within}).round(2)
+
+
 def mae_table(out, names, models, split):
     d = out[out.split == split]
     err = d[models].sub(d.y, axis=0).abs()
@@ -233,11 +254,17 @@ def main():
         metro_out.to_parquet(OUT / "backtest_metro.parquet")
 
     pd.set_option("display.width", 200)
-    models = ["lgbm", "naive", "no_change", "ets"]
+    level = out[["zip", "month"]].merge(
+        zips[["zip", "month", "zhvi_usd"]], on=["zip", "month"], how="left"
+    )
+    out["reconciled"] = reconcile(out, level.zhvi_usd.to_numpy())
+    models = ["lgbm", "naive", "no_change", "ets", "reconciled"]
     for split in ["validate", "test"]:
         print(f"\nZIP-level MAE of 12-month growth (percentage points), {split}:")
         print(mae_table(out, names, models, split).to_string())
     test = out[out.split == "test"]
+    print("\nError parts, test:")
+    print(error_parts(test, models).to_string())
     for cols in [("lo", "hi"), ("lo_cqr", "hi_cqr")]:
         inside = test.y.between(test[cols[0]], test[cols[1]])
         print(

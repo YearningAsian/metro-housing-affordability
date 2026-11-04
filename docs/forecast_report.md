@@ -8,7 +8,8 @@ pipeline run, then update the numbers here.
 **Answer:** LightGBM beats the naive baseline on the test period, but only just: 3.63 against 3.68 percentage points
 of mean absolute error. A plain no-change forecast (2.84) and metro AutoETS (3.15) both beat it. LightGBM is the best
 model at ranking ZIPs within their metro; it loses on the metro-wide level, where 2024–2025 brought a turn that
-none of its training years showed.
+none of its training years showed. Taking the metro level from AutoETS and the ZIP spread from LightGBM cuts the test
+error to 2.93, ahead of both parents but still behind no change, and it gives up LightGBM's validation lead.
 
 ## Setup
 
@@ -27,28 +28,37 @@ none of its training years showed.
     is given to every ZIP in the metro.
   - *LightGBM:* one global model over all ZIPs and 26 features (cbsa_code as a category), fixed parameters
     (600 rounds, learning rate 0.03, 31 leaves, seed 42). No tuning.
+  - *Reconciled:* LightGBM's ZIP forecasts shifted, per metro and origin, so their ZHVI-weighted mean equals the AutoETS
+    metro forecast. It keeps LightGBM's spread within the metro and takes the level from ETS.
 
 ## Results
 
 ZIP-level MAE of 12-month growth, in percentage points (lower is better):
 
-| Metro | LightGBM | Naive | No change | Metro ETS |
-| --- | --- | --- | --- | --- |
-| Atlanta | 4.21 | 4.14 | **2.81** | 3.26 |
-| Austin | **1.89** | 2.54 | 4.55 | 2.66 |
-| Charlotte | 3.54 | 3.54 | **2.05** | 2.44 |
-| Dallas-Fort Worth | 2.99 | 3.31 | 2.97 | **2.78** |
-| Denver | 3.03 | 2.79 | 2.44 | **2.27** |
-| Nashville | 2.41 | 2.51 | 2.37 | **2.32** |
-| Orlando | 4.20 | 4.09 | **2.82** | 3.14 |
-| Phoenix | 3.87 | 3.89 | **2.43** | 2.74 |
-| Raleigh | 2.98 | 3.08 | **1.67** | 1.94 |
-| Seattle | 4.63 | 4.50 | **2.35** | 5.58 |
-| Tampa | 5.13 | 5.09 | 4.40 | **4.15** |
-| **All (test, 2024–2025)** | 3.63 | 3.68 | **2.84** | 3.15 |
-| All (validation, 2023) | **3.16** | 5.46 | 3.39 | 3.82 |
+| Metro | LightGBM | Naive | No change | Metro ETS | Reconciled |
+| --- | --- | --- | --- | --- | --- |
+| Atlanta | 4.21 | 4.14 | **2.81** | 3.26 | 2.85 |
+| Austin | **1.89** | 2.54 | 4.55 | 2.66 | 2.42 |
+| Charlotte | 3.54 | 3.54 | **2.05** | 2.44 | 2.40 |
+| Dallas-Fort Worth | 2.99 | 3.31 | 2.97 | 2.78 | **2.48** |
+| Denver | 3.03 | 2.79 | 2.44 | 2.27 | **2.16** |
+| Nashville | 2.41 | 2.51 | 2.37 | 2.32 | **1.93** |
+| Orlando | 4.20 | 4.09 | **2.82** | 3.14 | 2.99 |
+| Phoenix | 3.87 | 3.89 | **2.43** | 2.74 | 2.63 |
+| Raleigh | 2.98 | 3.08 | **1.67** | 1.94 | 1.75 |
+| Seattle | 4.63 | 4.50 | **2.35** | 5.58 | 5.30 |
+| Tampa | 5.13 | 5.09 | 4.40 | 4.15 | **4.08** |
+| **All (test, 2024–2025)** | 3.63 | 3.68 | **2.84** | 3.15 | 2.93 |
+| All (validation, 2023) | **3.16** | 5.46 | 3.39 | 3.82 | 3.79 |
 
 LightGBM beats naive in 6 of 11 metros on test (Charlotte by under 0.01), and every model in Austin. In validation it beat every baseline.
+
+Reconciled beats both parents on test in 9 of 11 metros (LightGBM stays ahead in Austin and Seattle) and has the
+lowest error in 4, but it does not beat no change overall, and in validation it barely beats ETS. It inherits ETS's
+misses, most visibly Seattle. In a one-off check the weights mattered about as much as the gap to no change: equal
+weights give 2.99 on test and 3.86 on validation, and ZHVI × population, closer to total housing value, gives 3.02 and
+3.72. The ZHVI weights were chosen before any result was seen. The production forecast stays LightGBM, since no version
+wins both periods.
 
 ### Why LightGBM does not win the test period
 
@@ -61,6 +71,7 @@ within-metro part (each ZIP's gap from its metro average):
 | Naive | 3.31 | 1.74 |
 | No change | **2.23** | 1.78 |
 | Metro ETS | 2.57 | 1.78 |
+| Reconciled | 2.50 | **1.57** |
 
 LightGBM ranks ZIPs within their metro better than any baseline. Its loss is metro-wide: the median ZIP went from
 +0.9% growth (forecast from January 2024) to −2.8% (from October 2024), while the model kept forecasting gains of

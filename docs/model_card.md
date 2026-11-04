@@ -63,10 +63,12 @@ so a rerun on the same data gives the same scores. Package versions are pinned i
 | Naive (last year's growth) | 5.46 | 3.68 |
 | No change | 3.39 | **2.84** |
 | Metro AutoETS | 3.82 | 3.15 |
+| Reconciled (ETS metro level, LightGBM ZIP spread; backtest only) | 3.79 | 2.93 |
 
 LightGBM beats the naive baseline in both periods but loses the test period to no change and to metro ETS. Its loss
 is metro-wide: it kept forecasting gains through the 2024-2025 flattening, which no training year resembled. Within
-metros it ranks ZIPs best (within-metro error 1.57 against 1.74-1.78 for the baselines). The conformal band covered
+metros it ranks ZIPs best (within-metro error 1.57 against 1.74-1.78 for the baselines). Reconciling to the ETS metro
+level helps on test but not in validation and still trails no change, so the monthly run keeps LightGBM. The conformal band covered
 94% of test outcomes at a nominal 80% (mean width 15.6 pp): honest but too wide for a single ZIP. The monthly run
 calibrates on the latest known year only; its first band is about 9 pp wide at the median ZIP.
 
