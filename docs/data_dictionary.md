@@ -23,6 +23,7 @@ Snapshot date: **2026-10-27**. Lags and latest periods are as observed on that d
 | Redfin ZIP | (`REGION ID`, `PERIOD BEGIN`) | `PERIOD END` (rolling three months) | ZIP | mixed | NSA only | window ending 2026-09 | Same as metro |
 | Census BPS | (`survey_date`, `cbsa_code`) or (`survey_date`, `state_fips`, `county_fips`) | `survey_date` (`YYYYMM`) | CBSA, county | units, buildings, value | NSA | 2026-08 | About 6–8 weeks after month end |
 | ACS 5-year | (`geo_id`) per vintage | vintage (end year) | ZCTA, county, CBSA | USD, persons, percent | n/a (5-year pooled) | 2020–2024 | About 11–12 months after the last year (December release) |
+| ACS 1-year | (`geo_id`) per vintage | vintage (survey year) | CBSA | USD, persons, percent | n/a (one survey year) | 2025 | About 9 months after the year (September release) |
 | BLS QCEW | (`area_fips`, `own_code`, `industry_code`, `agglvl_code`, `size_code`, `year`, `qtr`) | `year`, `qtr` | county, MSA, state | jobs, USD | NSA | 2026 Q1 | About 5–7 months after quarter end |
 | FRED | (`series_id`, `date`) | `date` | national, metro (LAUS) | percent, index | per series | 2026-10-22 (weekly) | Mortgage: same week; CPI: about 2 weeks; metro unemployment: about 8 weeks |
 | IRS SOI migration | (`y2` state+county, `y1` state+county) | filing-year pair | county pairs | returns, exemptions, USD thousands | n/a (annual) | 2022–2023 | About 2 years after the second tax year |
@@ -31,7 +32,7 @@ Snapshot date: **2026-10-27**. Lags and latest periods are as observed on that d
 | CBSA delineation | (`FIPS State Code`, `FIPS County Code`) | vintage | county to CBSA | n/a | n/a | July 2023 | Irregular (OMB revisions) |
 | Cartographic boundaries | (`GEOID`) | vintage | CBSA, county, ZCTA | square metres | n/a | 2024 (ZCTA 2020) | Annual; ZCTA shapes only after each decennial census |
 
-**Point-in-time rule for features (Phase 11).** A row for month *m* may only use a value whose release date is on or before *m*. Use these availability rules: Zillow month *m* at *m*+1 (around the 16th); Redfin month *m* at *m*+1; BPS month *m* at *m*+2; QCEW quarter *q* at the end of the second quarter after *q*; ACS 5-year ending year *Y* from December of *Y*+1; IRS pair (*Y*-1, *Y*) from about the end of *Y*+2.
+**Point-in-time rule for features (Phase 11).** A row for month *m* may only use a value whose release date is on or before *m*. Use these availability rules: Zillow month *m* at *m*+1 (around the 16th); Redfin month *m* at *m*+1; BPS month *m* at *m*+2; QCEW quarter *q* at the end of the second quarter after *q*; ACS 5-year ending year *Y* from December of *Y*+1 (features use only the 5-year, for ZIPs and counties); IRS pair (*Y*-1, *Y*) from about the end of *Y*+2.
 
 ## Study metros across sources
 
@@ -181,6 +182,15 @@ API `https://api.census.gov/data/{year}/acs/acs5` (profiled: vintage 2020–2024
 - Dollar values are in inflation-adjusted dollars of the vintage's last year (2024 dollars for 2020–2024).
 - Each vintage is a five-year pooled estimate. Assign it to its end year and do not read single-year changes into overlapping vintages.
 - ACS publishes ZCTAs, not ZIPs. Phase 3 maps ZIPs to ZCTAs.
+
+## Census ACS 1-year
+
+API `https://api.census.gov/data/{year}/acs/acs1`, CBSA geography only (entity `cbsa_1yr`), the same variables as the
+5-year. Ingestion loads vintages 2015 to the latest; there is no 2020 release (COVID), so that year returns 404 and is
+skipped. The 2025 vintage was published in September 2026. Metro income, population and rent use the 1-year
+(`fct_income.acs_survey = 'acs1'`) because the 5-year pools five survey years and lags current incomes by about two years;
+counties and ZIPs stay on the 5-year, which is the only release for areas under 65,000 people. `int_income` pins each
+vintage to January of its year and interpolates month by month to the next one, carrying the latest forward.
 
 | Column | Type | Unit | Definition |
 | --- | --- | --- | --- |
@@ -344,7 +354,7 @@ Membership goes through the county, not HUD's ZIP-to-CBSA file, so ZIPs, countie
 | Zillow ZHVI, ZORI | metro file, `RegionID` = `dim_metro.zillow_region_id` | ZIP file, `RegionName` = `dim_zip.zip` |
 | Redfin | `REGION ID` in `dim_metro.redfin_table_ids`, monthly rows; split metros need the Phase 5 rule | ZIP from `REGION NAME`, rolling three-month window keyed on its `PERIOD END` month |
 | Census BPS | county file summed by `dim_county.cbsa_code` | permits per 1,000 weighted by `res_ratio` |
-| ACS 5-year | CBSA geography, carried forward to each month of the release year | ZCTA via `dim_zip.zcta`, carried forward |
+| ACS 1-year (metros), 5-year (ZIPs) | CBSA geography, 1-year, interpolated between vintages and carried forward after the latest | ZCTA via `dim_zip.zcta`, 5-year, interpolated the same way |
 | QCEW | `area_fips` = `dim_metro.qcew_area_fips`; monthly employment per month, wages per quarter carried forward | county average weekly wage weighted by `res_ratio` |
 | FRED | mortgage and CPI are national (weekly mortgage averaged to months); LAUS series per metro | metro value repeated for each ZIP in the metro |
 | IRS SOI migration | counties summed by `dim_county.cbsa_code`, annual, carried forward | county net migration rate weighted by `res_ratio` |

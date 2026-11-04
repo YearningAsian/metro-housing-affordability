@@ -56,7 +56,8 @@ plt.rcParams.update(
 # ---------------------------------------------------------------- metrics
 def price_to_income_change(start_year=2015):
     """Per metro: the start year's average price-to-income, ZHVI and CPI against the
-    latest 12 months'. Income is ACS 5-year, so it lags about 2 years."""
+    latest 12 months'. Metro income is ACS 1-year, interpolated between releases
+    and carried forward from the latest, so it lags about a year."""
     d = q(
         """
         select cbsa_code,
@@ -79,7 +80,7 @@ def mortgage_share_change(start_year=2015, down=0.10):
     """Per metro: monthly principal and interest on the typical home (ZHVI, `down` paid
     up front, 30-year fixed at that month's rate) over median household income / 12,
     as the start year's average against the latest 12 months'. Leaves out taxes and
-    insurance; ACS income lags about 2 years, so recent shares run a little high."""
+    insurance; ACS income lags about a year, so recent shares run a little high."""
     d = q(
         """
         with m as (

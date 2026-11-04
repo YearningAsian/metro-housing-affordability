@@ -33,13 +33,13 @@ flowchart LR
 
 What the data says (details and caveats in the [findings log](docs/findings.md)):
 
-- **Every metro got less affordable.** Price-to-income rose in all 11 metros since 2015: Seattle by 1.44 years of
-  median income (4.9 to 6.3), Austin by only 0.04 after giving back its 2022 spike.
+- **Every metro got less affordable.** Price-to-income rose in all 11 metros since 2015: Seattle by 1.59 years of
+  median income (4.5 to 6.1), Austin by only 0.29 after giving back most of its 2022 spike.
 - **Rents outgrew wages in 6 of 11 metros.** Atlanta's rents rose 81% against wages' 53% (+28 points); in Austin wages
   led by 44 points.
-- **Austin is the supply story.** It permitted the most housing (15.4 units per 1,000 residents a year) and had the
-  slowest home value growth (+57%). Across all metros permits correlate with slower growth (r = −0.55), but without
-  Austin the link nearly vanishes (r = −0.10).
+- **Austin is the supply story.** It permitted the most housing (15.6 units per 1,000 residents a year) and had the
+  slowest home value growth (+57%). Across all metros permits correlate with slower growth (r = −0.54), but without
+  Austin the link nearly vanishes (r = −0.08).
 - **Hot ZIPs were already rising a year earlier.** Their past growth sat 0.74 standard deviations above their metro;
   picking the top fifth on that measure finds next year's hot ZIPs 44% of the time, against a 20% base rate.
 
@@ -96,7 +96,7 @@ All free and public; no scraping.
 | [Zillow Research](https://www.zillow.com/research/data/) (ZHVI, ZORI) | Prices, rents |
 | [Redfin Data Center](https://www.redfin.com/news/data-center/) | Sale prices, inventory, days on market |
 | [Census Building Permits Survey](https://www.census.gov/construction/bps/index.html) | Housing supply |
-| [Census ACS 5-year](https://www.census.gov/data/developers/data-sets/acs-5year.html) | Income, population, rent burden |
+| [Census ACS 1-year and 5-year](https://www.census.gov/programs-surveys/acs/data.html) | Income, population, rent burden (1-year for metros, 5-year for counties and ZIPs) |
 | [BLS QCEW](https://www.bls.gov/cew/) | Jobs and wages |
 | [FRED](https://fred.stlouisfed.org/) | Mortgage rates, CPI, unemployment |
 | [IRS SOI migration](https://www.irs.gov/statistics/soi-tax-stats-migration-data) | County-to-county migration |

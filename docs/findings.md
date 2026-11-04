@@ -6,8 +6,9 @@ notebooks after a pipeline run to refresh them, then update this page.
 
 Shared caveats:
 
-- **ACS income lags.** ACS 5-year income averages five survey years, so it trails current incomes by about two years.
-  Months after 2024 reuse the 2020–2024 vintage (`income_is_carried_forward`).
+- **ACS income lags.** Metro income is the ACS 1-year estimate, published each September for the year before. It is
+  interpolated between vintages, and months after January 2025 carry the 2025 vintage forward
+  (`income_is_carried_forward`). There is no 2020 1-year release, so 2019 to 2021 is one straight line.
 - **QCEW carry-forward.** Wage growth is null in months after the latest published QCEW quarter, so wage comparisons
   end at 2026 Q1.
 - **IRS years.** An IRS tax year *t* compares filing addresses in *t*−1 and *t*, so tax year 2023 is mostly moves made
@@ -17,29 +18,30 @@ Shared caveats:
 ## Q1. Price-to-income
 
 **Finding:** price-to-income rose in all 11 metros from the 2015 average to the latest 12 months (Oct 2025–Sep 2026).
-Seattle rose most, from 4.9 to 6.3 years of median income (+1.44), with Nashville close behind (3.9 to 5.3, +1.39).
-Austin rose least (4.2 to 4.2, +0.04) after giving back its whole 2022 spike.
+Seattle rose most, from 4.5 to 6.1 years of median income (+1.59), ahead of Nashville (3.6 to 4.9, +1.34).
+Austin rose least (3.8 to 4.1, +0.29) after giving back most of its 2022 spike.
 
-- Number: +1.44 (Seattle), +0.04 (Austin).
+- Number: +1.59 (Seattle), +0.29 (Austin).
 - Charts: [trend by metro](figures/q1_price_to_income_trend.png), [ranked change](figures/q1_price_to_income_change.png).
 - Notebook: [`09_q1_price_to_income.ipynb`](../notebooks/09_q1_price_to_income.ipynb).
-- Caveats: the leader depends on the start year. From 2017 or 2019, Charlotte rises most and Seattle drops to the
-  middle (Spearman rank agreement with the 2015 ranking is 0.75 and 0.77). Austin and Denver stay at the bottom from
-  every start year. The carried-forward 2024 income vintage slightly overstates the latest ratios. A ratio needs no
-  inflation adjustment.
+- Caveats: the leader depends on the start year. From 2017, Charlotte rises most (+0.97, against Seattle's +0.93);
+  from 2019, Seattle leads again (Spearman rank agreement with the 2015 ranking is 0.89 and 0.85). Austin stays at the
+  bottom from every start year. The carried-forward 2025 income vintage slightly overstates the latest ratios. A ratio
+  needs no inflation adjustment.
 
 ## Q2. Permits against price growth
 
 **Finding:** across the 11 metros, each extra housing unit permitted per 1,000 residents per year in 2016–2025 went
-with 3.1 percentage points less home value growth over the decade (r = −0.55). Austin carries that line: it permitted
-the most (15.4 per 1,000 a year) and grew the least (+57%). Without Austin the slope is −0.6 pp (r = −0.10).
+with 3.0 percentage points less home value growth over the decade (r = −0.54). Austin carries that line: it permitted
+the most (15.6 per 1,000 a year) and grew the least (+57%). Without Austin the slope is −0.4 pp (r = −0.08).
 
-- Number: −3.1 pp per permit per 1,000 (r = −0.55); −0.6 pp (r = −0.10) without Austin.
+- Number: −3.0 pp per permit per 1,000 (r = −0.54); −0.4 pp (r = −0.08) without Austin.
 - Chart: [permits vs growth](figures/q2_permits_vs_growth.png).
 - Notebook: [`09_q2_permits_vs_prices.ipynb`](../notebooks/09_q2_permits_vs_prices.ipynb).
 - Caveats: this is a correlation across 11 points, not a supply effect, because fast-growing metros both build more and
-  draw more demand. Other windows are weaker: r = −0.33 for 2018–2025, −0.24 for 2020–2025, and −0.22 for
-  2016–2020 permits against 2020–2025 growth. Permits lead completions by one to two years.
+  draw more demand. Other windows are weaker: r = −0.32 for 2018–2025, −0.23 for 2020–2025, and −0.25 for
+  2016–2020 permits against 2020–2025 growth. Permits lead completions by one to two years. Each county-year's
+  permits are scaled up to the BPS annual file, which adds offices that report only once a year.
 
 ## Q3. Where newcomers come from
 
@@ -88,19 +90,19 @@ had lower incomes (−0.34 SD) and cheaper homes (−0.26 SD) than their metro.
 
 ## Q6. Mortgage payment as a share of income
 
-**Finding:** the monthly mortgage on a typical home now takes more than 30% of a median household income in 7 of 11
-metros; in the 2015 average, none passed 30%. Seattle is highest at 42.7% (up from 24.9%), and Nashville rose almost as much
-(19.6% to 35.5%). Dallas–Fort Worth is lowest at 27.0% (up from 15.7%). The share rose faster than price-to-income
-because mortgage rates roughly doubled.
+**Finding:** the monthly mortgage on a typical home now takes more than 30% of a median household income in 5 of 11
+metros; in the 2015 average, none passed 30%. Seattle is highest at 41.0% (up from 22.8%), and Nashville had the next
+largest rise (18.0% to 32.9%). Dallas–Fort Worth is lowest at 25.7% (up from 15.0%). The share rose faster than
+price-to-income because mortgage rates roughly doubled.
 
-- Number: 7 of 11 over 30% (none in 2015); Seattle 42.7%, Dallas–Fort Worth 27.0%.
+- Number: 5 of 11 over 30% (none in 2015); Seattle 41.0%, Dallas–Fort Worth 25.7%.
 - Helper: `mortgage_share_change()` in [`notebooks/common.py`](../notebooks/common.py). Principal and interest only,
   ZHVI with 10% down, 30-year fixed at that month's Freddie Mac rate, over median household income / 12; the 2015
   average against Oct 2025–Sep 2026.
-- Caveats: the count depends on the down payment. With 3.5% down (FHA), 10 of 11 metros pass 30%; with 20% down, 4 do.
+- Caveats: the count depends on the down payment. With 3.5% down (FHA), 8 of 11 metros pass 30%; with 20% down, 2 do.
   Seattle leads and Dallas–Fort Worth is lowest in every case. Taxes, insurance and HOA fees are left out, which
   understates the real cost. The lagged ACS income overstates recent shares a little. Even from 2019, no metro started
-  above 30% (the highest was 29.5%).
+  above 30% (the highest was 26.8%).
 
 ## Robustness
 
