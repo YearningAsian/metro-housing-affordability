@@ -27,7 +27,7 @@ LATEST_12M = f"{(LATEST - pd.DateOffset(months=11)):%b %Y}–{LATEST:%b %Y}"
 
 # Reference palette (dataviz skill): one highlight hue over gray context
 SURFACE, INK, INK2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#c3c2b7", "#e8e7e3"
-BLUE, ORANGE, RED = "#2a78d6", "#eb6834", "#e34948"
+BLUE, ORANGE, RED, AQUA = "#2a78d6", "#eb6834", "#e34948", "#1baf7a"
 plt.rcParams.update(
     {
         "figure.facecolor": SURFACE,
@@ -103,6 +103,41 @@ def mortgage_share_change(start_year=2015, down=0.10, taxes=True):
     d["change"] = d.latest_share - d.start_share
     d.index = d.pop("cbsa_code").map(METRO).rename("metro")
     return d.sort_values("latest_share", ascending=False)
+
+
+def mortgage_share_split(down=0.10):
+    """Per metro: the log change in the mortgage share (PAYMENT with taxes over income)
+    split exactly into price (ZHVI), financing (rate and property tax per dollar
+    borrowed) and income, for 2015 to 2021, 2021 to the latest 12 months, and 2015 to
+    the latest 12 months. Each period is the mean of its monthly logs; a component's
+    value is its log-point contribution (0.10 = about 10% higher share)."""
+    d = q(
+        """
+        with m as (
+            select cbsa_code, month,
+                ln(zhvi_usd) price,
+                ln((1 - $down) * r / (1 - pow(1 + r, -360)) + property_tax_rate / 12) financing,
+                -ln(median_household_income_usd / 12) income
+            from (select *, mortgage_rate_pct / 1200 r from gold.mart_metro_month)
+        )
+        select cbsa_code,
+            case when year(month) = 2015 then '2015' when year(month) = 2021 then '2021' else 'latest' end period,
+            avg(price) price, avg(financing) financing, avg(income) income
+        from m
+        where year(month) in (2015, 2021) or (month > $latest - interval 12 month and month <= $latest)
+        group by all
+        """,
+        {"latest": LATEST, "down": down},
+    ).set_index(["cbsa_code", "period"])
+    out = []
+    for start, end in (("2015", "2021"), ("2021", "latest"), ("2015", "latest")):
+        w = d.xs(end, level="period") - d.xs(start, level="period")
+        w["total"] = w.sum(axis=1)
+        w["window"] = f"{start}-{end}"
+        out.append(w)
+    out = pd.concat(out).reset_index()
+    out["metro"] = out.pop("cbsa_code").map(METRO)
+    return out.set_index(["window", "metro"]).sort_index()
 
 
 # lower bounds of the ACS B19001 income brackets (households_by_income)

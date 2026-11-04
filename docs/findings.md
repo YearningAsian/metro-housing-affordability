@@ -128,6 +128,26 @@ from 31% in Seattle to 50% in Atlanta. In 2015 they ranged from 54% (Seattle) to
   incomes rise. Above $200,000 (the open top bracket) the method would return an upper bound; no metro needs that
   much yet.
 
+## Q8. What drove the rise in the mortgage share
+
+**Finding:** prices did the damage first and rates second. From 2015 to 2021, home prices alone would have raised the
+mortgage share by a median 0.53 log points (about 70%), but falling rates (−0.13) and rising incomes (−0.28) absorbed
+most of it, for a net +0.14. From 2021 to Oct 2025–Sep 2026, rates and tax were the largest part in all 11 metros
+(+0.35), ahead of prices (+0.20) and against income (−0.15). Over the whole span prices still lead: in Seattle the net
++0.52 is +0.75 from prices, +0.22 from financing and −0.45 from income.
+
+- Number: 2021 to now, financing +0.35 against prices +0.20 (medians); 2015 to now, prices +0.73, financing +0.22,
+  income −0.44.
+- Chart: [the split by metro](figures/q8_mortgage_share_split.png).
+- Notebook: [`09_q8_mortgage_share_split.ipynb`](../notebooks/09_q8_mortgage_share_split.ipynb); helper
+  `mortgage_share_split()` in [`notebooks/common.py`](../notebooks/common.py). The log of the Q6 share is log price +
+  log financing cost per dollar (rate and property tax) − log income, so the three parts add up exactly; each period is
+  the mean of its monthly logs, which matches the Q6 change to within 0.001.
+- Caveats: log points are relative, not percentage points of income (0.10 means a share about 10% higher). The
+  financing part mixes rates and tax rates; tax rates fell a little in most metros, so the rate effect alone is a bit
+  larger. Austin is the one metro where prices fell after 2021 (−0.05). Lagged ACS income makes the latest income part
+  a little too small.
+
 ## Robustness
 
 - **Start years:** see the Q1, Q2 and Q4 caveats. The Q1 leader changes with the start year. The Q2 slope weakens in
