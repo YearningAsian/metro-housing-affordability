@@ -2,7 +2,8 @@
 
 Refits the 12-month growth forecast (LightGBM point and quantile models, the band widened by a split-conformal margin
 from the last 12 months with known outcomes) and the hot-ZIP classifier on every outcome known today. Scores the
-latest month into ml.predictions, replacing an earlier run's scores for that month, and logs the run to MLflow in
+latest month into ml.predictions, replacing an earlier run's scores for that month, writes each ZIP's SHAP values for
+that month to ml.hot_zip_reasons, and logs the run to MLflow in
 data/mlflow. Then checks drift: the predictions whose 12-month outcome became known this month against the backtest
 error. On drift it warns, and in GitHub Actions sets the step output drift=true, which fails the workflow's alert
 job and emails.
@@ -29,7 +30,7 @@ from ml.forecast import (
     known_by,
     load,
 )
-from ml.hot_zips import WEIGHT, fit_classifier, flag
+from ml.hot_zips import SEEDS, WEIGHT, fit_classifier, flag, reasons
 
 LO, HI = (1 - COVERAGE) / 2, (1 + COVERAGE) / 2
 # worst per-origin ZIP-level MAE of LightGBM on the 2024-2025 backtest test origins (docs/forecast_report.md)
@@ -122,8 +123,15 @@ def main():
         scored["model_version"] = version
         scored["mlflow_run_id"] = run.info.run_id
 
+        latest = zips[zips.month == zips.month.max()]
+        why = reasons(latest, cols, models["top20"])
+
         OUT.mkdir(parents=True, exist_ok=True)
-        for name, model in models.items():
+        boosters = {n: m for n, m in models.items() if n != "top20"} | {
+            f"top20_seed{s}": m
+            for s, m in zip(SEEDS, models["top20"].models, strict=True)
+        }
+        for name, model in boosters.items():
             model.save_model(OUT / f"lgbm_{name}.txt")
             mlflow.log_artifact(str(OUT / f"lgbm_{name}.txt"), "models")
         mlflow.log_params(
@@ -132,6 +140,7 @@ def main():
                 "rounds": ROUNDS,
                 "coverage": COVERAGE,
                 "pos_weight": WEIGHT,
+                "hot_seeds": len(SEEDS),
                 "features": len(cols),
             }
             | {"model_version": version, "scored_month": f"{scored.month.max():%Y-%m}"}
@@ -149,6 +158,9 @@ def main():
         con = duckdb.connect(str(ROOT / "data" / "warehouse.duckdb"))
         con.execute("delete from ml.predictions where month = ?", [scored.month.max()])
         con.execute("insert into ml.predictions by name select * from scored")
+        # why each ZIP scored as it did, for the dashboard; only the latest month is kept
+        con.register("why", why)
+        con.execute("create or replace table ml.hot_zip_reasons as select * from why")
         matured = con.sql(
             """
             select p.month, p.growth_pred, p.hot_flag, f.target_growth_12m actual_growth_12m,

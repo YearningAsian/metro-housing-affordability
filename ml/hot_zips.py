@@ -3,7 +3,7 @@
 Classifies target_top20 from ml.features_zip_month. Each evaluation fit sees only rows whose outcome was published
 before its period began: rows known by January 2023 for the 2023 validation months and by January 2024 for the
 2024-2025 test months. Models: last year's growth as a baseline score, logistic regression, LightGBM with the
-positive class weighted 4:1, and a backtest-only LightGBM LambdaRank grouped by metro and month. Explanations are the
+positive class weighted 4:1 (three seeds averaged), and a backtest-only LightGBM LambdaRank grouped by metro and month. Explanations are the
 classifier's TreeSHAP values (pred_contrib), in log-odds.
 
 Draws docs/figures/hot_zips_*.png and prints the metrics and the current top flags for docs/hot_zips_report.md. The
@@ -11,12 +11,14 @@ monthly scores and flags go to ml.predictions through ml/train.py.
 Run: uv run --group ml --group dev python -m ml.hot_zips
 """
 
+import numpy as np
 import pandas as pd
 
 from ml.forecast import ROOT, features, fit_lgbm, known_by, load
 
 TOP = 20  # flagged ZIPs per month for the headline precision
 WEIGHT = 4  # positive class weight: 80% negatives to 20% positives
+SEEDS = (1, 2, 3)  # the classifier averages one fit per seed (SeedAverage)
 RANK_DEPTH = (
     80  # the top fifth of the largest metro (388 ZIPs), past LightGBM's default of 30
 )
@@ -41,9 +43,53 @@ def fit_logit(train, cols, label="target_top20"):
     return model.fit(train[cols], train[label].astype(int))
 
 
+class SeedAverage:
+    """Classifiers that differ only in their random seed, averaged in log-odds. A single fit's scores move with the
+    row order (LightGBM samples rows and features): on the 2024-2025 test months two seeds disagreed on 9-10% of
+    flags, two 3-seed averages on 6%, at the same precision. Turning sampling off fixed the flags but cost precision.
+    The averaged TreeSHAP values still add up to the averaged log-odds."""
+
+    def __init__(self, models):
+        self.models = models
+
+    def predict(self, x, pred_contrib=False):
+        if pred_contrib:
+            return np.mean([m.predict(x, pred_contrib=True) for m in self.models], 0)
+        raw = np.mean([m.predict(x, raw_score=True) for m in self.models], 0)
+        return 1 / (1 + np.exp(-raw))
+
+
 def fit_classifier(train, cols):
-    return fit_lgbm(
-        train, cols, objective="binary", label="target_top20", scale_pos_weight=WEIGHT
+    return SeedAverage(
+        [
+            fit_lgbm(
+                train,
+                cols,
+                objective="binary",
+                label="target_top20",
+                scale_pos_weight=WEIGHT,
+                seed=s,
+            )
+            for s in SEEDS
+        ]
+    )
+
+
+def reasons(latest, cols, classifier):
+    """One row per ZIP and feature: the feature's value and its TreeSHAP push on the hot-ZIP score, in log-odds."""
+    contrib = classifier.predict(latest[cols], pred_contrib=True)[:, :-1]
+    numeric = latest[cols].copy()
+    # the metro (a category) has no number to show
+    numeric[[c for c in cols if not pd.api.types.is_numeric_dtype(numeric[c])]] = np.nan
+    return pd.DataFrame(
+        {
+            "zip": np.repeat(latest.zip.to_numpy(), len(cols)),
+            "cbsa_code": np.repeat(latest.cbsa_code.astype(str).to_numpy(), len(cols)),
+            "month": np.repeat(latest.month.to_numpy(), len(cols)),
+            "feature": np.tile(cols, len(latest)),
+            "value": numeric.to_numpy(dtype=float).ravel(),
+            "contribution": contrib.ravel(),
+        }
     )
 
 

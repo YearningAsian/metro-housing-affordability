@@ -19,6 +19,7 @@ zips = set()
 for name in [
     "dim_metro",
     "dim_zip",
+    "hot_zip_reasons",
     "mart_metro_month",
     "mart_migration_origins",
     "mart_zip_forecast",

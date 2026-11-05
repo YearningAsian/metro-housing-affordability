@@ -45,12 +45,14 @@ pricing a single home, lending decisions or comparisons outside the study metros
 1. Fit the point model and the 10% and 90% quantile models on every row whose outcome is known.
 2. Compute the conformal margin: quantile models fit on rows known by the start of the last known year, scored on
    that year (about 17,000 rows); the margin is the 80% quantile of their misses.
-3. Fit the hot-ZIP classifier (binary, positives weighted 4:1) on every row with a known `target_top20`.
-4. Score the latest month, replace any earlier run's scores for that month in `ml.predictions`, and log the
-   parameters, metrics and four model files to MLflow (`data/mlflow`, kept in R2 between runs).
+3. Fit the hot-ZIP classifier (binary, positives weighted 4:1) on every row with a known `target_top20`, once each
+   with seeds 1, 2 and 3, and average the three in log-odds.
+4. Score the latest month, replace any earlier run's scores for that month in `ml.predictions`, write each ZIP's
+   SHAP values for that month to `ml.hot_zip_reasons` (the Forecasts page's "Why this score?"), and log the
+   parameters, metrics and six model files to MLflow (`data/mlflow`, kept in R2 between runs).
 5. Check drift (below).
 
-Parameters are fixed and untuned: 600 rounds, learning rate 0.03, 31 leaves, seed 42. Rows are read in a fixed order,
+Parameters are fixed and untuned: 600 rounds, learning rate 0.03, 31 leaves, seed 42 (the classifier: seeds 1-3). Rows are read in a fixed order,
 so a rerun on the same data gives the same scores. Package versions are pinned in `uv.lock`.
 
 ## Backtest results
@@ -79,6 +81,7 @@ calibrates on the latest known year only; its first band is about 9 pp wide at t
 | Momentum (last year's growth) | **0.443** | 0.301 |
 | Logistic regression | 0.412 | 0.338 |
 | LightGBM | 0.405 | 0.342 |
+| LightGBM, three seeds averaged (published since November 2026) | 0.404 | 0.344 |
 | LightGBM LambdaRank (backtest only) | 0.431 | **0.358** |
 
 Every model doubles the base rate. The LightGBM classifier does not beat momentum on the published rule's precision in
@@ -108,8 +111,10 @@ autumn 2027, once Zillow publishes September 2027.
   partly stands in for the period.
 - **Price-level drift:** the hot-ZIP flags lean on the dollar price level, which today is past most of the training
   range.
-- **Noisy single scores:** a different row order moved single test scores by up to 0.25, so ZIPs near a metro's
-  80th-percentile cutoff can flip in or out of the flags between runs.
+- **Noisy single scores:** a single fit's scores move with the row order, which each month's new rows shift. Two
+  fits that differ only in seed disagreed on 9-10% of test flags (scores up to 0.27 apart). The published score
+  averages three seeds, which cut that to 6% (up to 0.18) at the same precision; ZIPs near a metro's
+  80th-percentile cutoff can still flip between runs.
 - **Missing drivers:** insurance costs, zoning and local employers are not in the data. The 2024-2025 Florida decline,
   often tied to insurance costs, was missed. FEMA's county risk index does not explain it either: inside Tampa and
   Orlando, higher risk does not go with larger falls, and Austin fell as much with almost no hurricane risk

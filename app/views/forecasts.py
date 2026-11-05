@@ -1,6 +1,38 @@
+import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
-from common import BLUE, RED, chart, footer, load, pick_metro, style
+from common import BLUE, INK2, RED, SURFACE, chart, footer, load, pick_metro, style
+
+# the hot-ZIP model's inputs (ml.features_zip_month): plain name and value format
+FEATURES = {
+    "cbsa_code": ("Metro", None),
+    "zhvi_usd": ("Typical home value", "${:,.0f}"),
+    "zhvi_growth_1m": ("Home value change, 1 month", "{:+.1%}"),
+    "zhvi_growth_3m": ("Home value change, 3 months", "{:+.1%}"),
+    "zhvi_growth_6m": ("Home value change, 6 months", "{:+.1%}"),
+    "zhvi_growth_12m": ("Home value change, 12 months", "{:+.1%}"),
+    "zori_usd": ("Typical rent", "${:,.0f}"),
+    "zori_growth_1m": ("Rent change, 1 month", "{:+.1%}"),
+    "zori_growth_3m": ("Rent change, 3 months", "{:+.1%}"),
+    "zori_growth_6m": ("Rent change, 6 months", "{:+.1%}"),
+    "zori_growth_12m": ("Rent change, 12 months", "{:+.1%}"),
+    "zhvi_volatility_12m": ("Home value volatility", "{:.2%}"),
+    "zhvi_momentum": ("Momentum, last 3 months against 12", "{:+.1%}"),
+    "metro_zhvi_growth_12m": ("Metro home value change, 12 months", "{:+.1%}"),
+    "zhvi_to_metro_median": ("Home value against the metro's median ZIP", "{:.2f}×"),
+    "inventory": ("Homes for sale", "{:,.0f}"),
+    "median_days_on_market": ("Median days on market", "{:.0f}"),
+    "sale_to_list_pct": ("Sale price to list price", "{:.1f}%"),
+    "sold_above_list_pct": ("Sold above list", "{:.0f}%"),
+    "off_market_in_two_weeks_pct": ("Off the market in two weeks", "{:.0f}%"),
+    "permits_per_1000": ("Permits per 1,000 residents", "{:.1f}"),
+    "mortgage_rate_pct": ("30-year mortgage rate", "{:.2f}%"),
+    "price_to_income": ("Home value to income", "{:.1f}×"),
+    "avg_weekly_wage_usd": ("Average weekly wage", "${:,.0f}"),
+    "avg_weekly_wage_yoy_growth": ("Wage change, 1 year", "{:+.1%}"),
+    "rent_to_wage": ("Rent as a share of wages", "{:.0%}"),
+}
 
 st.title("Forecasts")
 st.caption(
@@ -104,6 +136,77 @@ st.dataframe(
         ),
     },
 )
+try:
+    why = load("hot_zip_reasons.parquet")
+    why = why[(why.cbsa_code == code) & (why.month == month)]
+except OSError:  # the published exports predate the SHAP values
+    why = None
+if why is not None and not why.empty:
+    st.subheader("Why this score?")
+    st.caption(
+        "How far each input pushed the ZIP's hot-ZIP score up (blue) or down (red) "
+        "against the average ZIP, in log-odds (TreeSHAP). The eight largest pushes are "
+        "shown. They explain the model, not the market: a push is what the model learned "
+        "from past ZIPs, not a cause."
+    )
+    ranked = f.sort_values("hot_score", ascending=False)
+    hot = set(ranked.zip[ranked.hot_flag])
+    pick = st.selectbox(
+        "ZIP, highest score first",
+        ranked.zip,
+        format_func=lambda z: z + (" (flagged hot)" if z in hot else ""),
+        key="why_zip",
+        width=320,
+    )
+    s = why[why.zip == pick].set_index("feature")
+    s = s.loc[s.contribution.abs().sort_values().tail(8).index]
+    rest = why[(why.zip == pick) & ~why.feature.isin(s.index)].contribution.sum()
+
+    def label(feature, value):
+        name, fmt = FEATURES.get(feature, (feature, "{:.3g}"))
+        if fmt is None:
+            return name
+        return f"{name}: no data" if pd.isna(value) else f"{name}: {fmt.format(value)}"
+
+    names = [label(k, v) for k, v in s.value.items()]
+    fig = go.Figure(
+        go.Bar(
+            x=s.contribution,
+            y=list(range(len(s))),
+            width=0.4,
+            orientation="h",
+            marker_color=[BLUE if v > 0 else RED for v in s.contribution],
+            customdata=names,
+            hovertemplate="%{customdata}: %{x:+.2f}<extra></extra>",
+        )
+    )
+    fig.add_vline(x=0, line_color=INK2, line_width=1)
+    # labels sit above their bars, not on the y axis, so phones keep the bar width
+    for i, name in enumerate(names):
+        fig.add_annotation(
+            text=name,
+            x=0,
+            xref="paper",
+            xanchor="left",
+            y=i + 0.25,
+            yanchor="bottom",
+            showarrow=False,
+            bgcolor=SURFACE,
+            font={"color": INK2, "size": 12},
+        )
+    chart(
+        style(
+            fig,
+            height=56 * len(s) + 70,
+            barcornerradius=4,
+            xaxis_title="Push on the score, log-odds",
+            xaxis_tickformat="+.1f",
+            yaxis_visible=False,
+            yaxis_range=[-0.5, len(s) - 0.3],
+        )
+    )
+    st.caption(f"The other {why.feature.nunique() - len(s)} inputs add {rest:+.2f}.")
+
 st.subheader("Track record")
 if done.empty:
     st.caption(

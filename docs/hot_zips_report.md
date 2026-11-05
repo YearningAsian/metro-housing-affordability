@@ -141,7 +141,17 @@ current flags favor expensive ZIPs.
   (`hot_rank_pct` in `ml.predictions`).
 - **Noisy single scores:** refitting on the same rows in a different order (LightGBM samples rows at random) moved
   single test scores by up to 0.25, so a ZIP near its metro's 80th-percentile cutoff can flip in or out of the flags.
-  The code fixes the row order so reruns match, but the spread is real model uncertainty.
+  The code fixes the row order so reruns match, but each month's new rows shift it. Since November 2026 the
+  classifier averages three fits (seeds 1-3) in log-odds. On the test months, fit on rows known by January 2024:
+
+  | Comparison | Flags not in the other fit | Largest score gap | Precision, top 20% per metro | PR-AUC |
+  | --- | --- | --- | --- | --- |
+  | Single fits, seed 1 against 2, 3 against 4, 5 against 6 | 9.1%, 9.4%, 10.0% | 0.26-0.27 | 0.401-0.404 | 0.343-0.344 |
+  | Three-seed averages, seeds 1-3 against 4-6 | 6.2% | 0.18 | 0.404 | 0.344 |
+  | No row or feature sampling, rows shuffled | 0% | 0 | 0.386 | 0.329 |
+
+  Turning sampling off fixes the flags but costs precision, so the run averages seeds instead. The tables above and
+  the SHAP charts come from single fits with seed 42.
 - **Price-level drift:** the current flags rely on the dollar price level, which is past most of the training range
   (see SHAP above).
 - **One fit per period, no tuning:** the test model is fit once in January 2024 and not refreshed; the parameters are

@@ -32,6 +32,14 @@
         {% do log("exported zip_clusters", info=true) %}
     {% endif %}
 
+    {# each ZIP's SHAP values for the latest hot-ZIP scores, written by ml/train.py; skipped before its first run #}
+    {% if adapter.get_relation(database=target.database, schema='ml', identifier='hot_zip_reasons') %}
+        {% do run_query(
+            "copy (select * from ml.hot_zip_reasons) to '" ~ path ~ "/hot_zip_reasons.parquet' (format parquet)"
+        ) %}
+        {% do log("exported hot_zip_reasons", info=true) %}
+    {% endif %}
+
     {# study ZIP outlines keyed by zip (one zcta per zip in dim_zip); 0.001 degrees (~100 m) keeps it near 3 MB #}
     {% do run_query(
         "copy (select z.zip, st_simplifypreservetopology(st_geomfromwkb(s.geom), 0.001) as geom
