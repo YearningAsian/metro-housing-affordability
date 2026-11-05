@@ -112,6 +112,19 @@ Dropping the three dollar-level features (`zhvi_usd`, `zori_usd`, `avg_weekly_wa
 measures worse (PR-AUC 0.320, within-metro precision 0.369; top-20 precision rose to 0.452), so they stay, but the
 current flags favor expensive ZIPs.
 
+Making the three dollar features drift-free instead of dropping them did not help either. On the 2024-2025 test months
+(three seeds averaged, trained on rows known by January 2024):
+
+| Dollar features as | Precision, top 20 a month | Precision, top 20% per metro | PR-AUC |
+| --- | --- | --- | --- |
+| Dollars (published) | 0.457 | 0.404 | 0.344 |
+| Ratio to that month's median across all ZIPs | 0.438 | 0.355 | 0.320 |
+| Percentile among all ZIPs that month | 0.433 | 0.359 | 0.319 |
+
+Both lose on every measure, in 2024 and in 2025 alike, so the dollar levels stay. The lean is also smaller than the SHAP
+values suggest: 40% of the September 2026 flags sit in their metro's priciest fifth of ZIPs, close to the 38% of
+actual top-fifth growth ZIPs that did in the test months.
+
 ## ZIPs flagged for the 12 months from September 2026
 
 290 of 1,436 ZIPs are flagged (each metro's top 20%). The five highest scores per metro (the full list is in
@@ -153,7 +166,7 @@ current flags favor expensive ZIPs.
   Turning sampling off fixes the flags but costs precision, so the run averages seeds instead. The tables above and
   the SHAP charts come from single fits with seed 42.
 - **Price-level drift:** the current flags rely on the dollar price level, which is past most of the training range
-  (see SHAP above).
+  (see SHAP above). Drift-free versions of the dollar features scored worse, so they were not adopted.
 - **One fit per period, no tuning:** the test model is fit once in January 2024 and not refreshed; the parameters are
   the forecast's, untuned.
 - **Restated inputs:** Zillow and Redfin restate history and the warehouse keeps only their latest release, so past

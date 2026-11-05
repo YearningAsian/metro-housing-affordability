@@ -110,7 +110,9 @@ autumn 2027, once Zillow publishes September 2027.
 - **The mortgage rate dominates:** it carries most of the forecast's split gain and, as one national number a month,
   partly stands in for the period.
 - **Price-level drift:** the hot-ZIP flags lean on the dollar price level, which today is past most of the training
-  range.
+  range. Drift-free versions (ratio to the month's median, or percentile) scored worse on every test measure, so the
+  dollar levels stay ([hot-ZIP report](hot_zips_report.md)). 40% of current flags are in their metro's priciest
+  fifth, close to the 38% seen among actual hot ZIPs in the test months.
 - **Noisy single scores:** a single fit's scores move with the row order, which each month's new rows shift. Two
   fits that differ only in seed disagreed on 9-10% of test flags (scores up to 0.27 apart). The published score
   averages three seeds, which cut that to 6% (up to 0.18) at the same precision; ZIPs near a metro's
