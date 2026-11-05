@@ -20,7 +20,7 @@ def test_share_above_splits_a_bracket_evenly():
 
 
 @pytest.mark.parametrize(
-    "page", ["overview", "metro", "migration", "forecasts", "findings"]
+    "page", ["overview", "metro", "migration", "forecasts", "findings", "matchmaker"]
 )
 def test_page_runs_on_sample(page, monkeypatch, tmp_path):
     monkeypatch.setattr(common, "LOCAL", tmp_path)  # no data/export
@@ -40,3 +40,10 @@ def test_metro_page_shows_neighborhood_types(monkeypatch, tmp_path):
     assert not at.exception, at.exception
     table = at.dataframe[0].value
     assert len(table) == 6 and table["ZIPs"].sum() > 0
+
+
+def test_payment_matches_a_known_mortgage():
+    # $300k loan at 6% over 30 years is $1,798.65 a month; 1% tax on $400k adds $333.33
+    assert abs(common.payment(400_000, 100_000, 6.0, 0.01) - 2131.98) < 0.01
+    # savings above the price leave only the tax
+    assert abs(common.payment(100_000, 150_000, 6.0, 0.012) - 100) < 1e-9

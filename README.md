@@ -125,7 +125,7 @@ Each monthly pipeline run refits both models on every known outcome, scores the 
 
 ## Dashboard
 
-A Streamlit app in [`app/`](app/) with four pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, and forecasts (each ZIP's 12-month forecast and hot-ZIP flag from the monthly model). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).
+A Streamlit app in [`app/`](app/) with six pages: an overview of which metro got least affordable, a metro detail page (ZIP map of home value growth, home values against wages, permits), migration origins, forecasts (each ZIP's 12-month forecast and hot-ZIP flag from the monthly model), findings (the answers to the project's questions), and a matchmaker (enter income and savings, see which metros and ZIPs fit a monthly budget to buy or rent). It reads the exports from `data/export` when they exist locally, otherwise from GitHub Pages (override with `DATA_URL`).
 
 ```powershell
 uv run --group app streamlit run app/streamlit_app.py

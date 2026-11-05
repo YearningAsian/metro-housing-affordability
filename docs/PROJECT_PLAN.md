@@ -412,7 +412,7 @@ Each stretch phase is a self-contained add-on of 1–2 weeks; pick by the job yo
 
 - [ ] Serve metro metrics and predictions with FastAPI, containerized with Docker
 - [ ] Deploy to a free tier such as Render or Fly.io
-- [ ] Or build a Streamlit "metro matchmaker": enter income and budget, get the metros and ZIPs that fit
+- [x] Or build a Streamlit "metro matchmaker": enter income and budget, get the metros and ZIPs that fit
 
 ## Risks and pitfalls
 

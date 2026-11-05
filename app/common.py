@@ -48,13 +48,19 @@ def metro_month():
     effective rate) over median household income / 12, as in notebooks/common.py.
     Leaves out insurance and HOA fees."""
     m = load("mart_metro_month.parquet").copy()
-    r = m.mortgage_rate_pct / 1200
-    m["payment"] = (
-        0.9 * m.zhvi_usd * r / (1 - (1 + r) ** -360)
-        + m.zhvi_usd * m.property_tax_rate / 12
+    m["payment"] = payment(
+        m.zhvi_usd, 0.1 * m.zhvi_usd, m.mortgage_rate_pct, m.property_tax_rate
     )
     m["mortgage_share"] = m.payment / (m.median_household_income_usd / 12)
     return m
+
+
+def payment(price, down, rate_pct, tax_rate):
+    """Monthly principal and interest on price - down (30-year fixed at rate_pct), plus
+    property tax at tax_rate a year. A down payment above the price leaves no loan."""
+    r = rate_pct / 1200
+    loan = np.maximum(price - down, 0)
+    return loan * r / (1 - (1 + r) ** -360) + price * tax_rate / 12
 
 
 def metro_names():
