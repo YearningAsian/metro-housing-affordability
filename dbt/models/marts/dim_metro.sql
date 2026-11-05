@@ -23,6 +23,7 @@ select
     m.zillow_region_id::bigint as zillow_region_id,
     m.redfin_table_ids,
     m.fred_unemployment_series,
+    m.fred_jobs_series,
     m.hud_fmr_areas,
     -- QCEW names MSAs with C + the first four CBSA digits
     'C' || left(m.cbsa_code, 4) as qcew_area_fips

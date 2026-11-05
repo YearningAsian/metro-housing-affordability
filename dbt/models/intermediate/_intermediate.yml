@@ -63,7 +63,7 @@ models:
       - {name: permits_per_1000, description: "{{ doc('permits_per_1000') }}"}
 
   - name: int_wages
-    description: Employment, wages and unemployment per place and month, from QCEW and BLS LAUS (via FRED).
+    description: Employment, wages, unemployment and payrolls per place and month, from QCEW, BLS LAUS and BLS CES (the last two via FRED).
     data_tests: *place_month_key
     columns:
       - *geo_level
@@ -74,6 +74,7 @@ models:
       - {name: wages_quarter, description: "{{ doc('wages_quarter') }}"}
       - {name: wages_is_carried_forward, description: "{{ doc('wages_is_carried_forward') }}"}
       - {name: unemployment_rate_pct, description: "{{ doc('unemployment_rate_pct') }}"}
+      - {name: payroll_jobs_thousands, description: "{{ doc('payroll_jobs_thousands') }}"}
 
   - name: int_migration
     description: Net migration per place and month, from the IRS county flows.

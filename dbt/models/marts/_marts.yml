@@ -70,6 +70,9 @@ models:
       - name: fred_unemployment_series
         description: FRED series id of the metro's unemployment rate.
         data_tests: [unique, not_null]
+      - name: fred_jobs_series
+        description: FRED series id of the metro's total nonfarm payrolls (BLS CES).
+        data_tests: [unique, not_null]
       - name: hud_fmr_areas
         description: HUD FMR area codes in the metro; the first is the core area the marts use.
       - name: qcew_area_fips
@@ -343,7 +346,7 @@ models:
 
   - name: fct_economy
     description: >
-      FRED series by month: metro unemployment rates (cbsa_code set) and national series (cbsa_code null).
+      FRED series by month: metro unemployment rates and payrolls (cbsa_code set) and national series (cbsa_code null).
       Weekly series are averaged over the month.
     data_tests:
       - unique:
@@ -354,7 +357,13 @@ models:
         description: FRED series id.
         data_tests: [not_null]
       - name: cbsa_code
-        description: Study metro of a metro unemployment series; null for national series.
+        description: Study metro of a metro series; null for national series.
+      - name: metro_measure
+        description: What a metro series measures; null for national series.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [unemployment_rate, payroll_jobs]
       - *month
       - name: value
         description: Monthly value (average of the month's observations).
@@ -434,6 +443,9 @@ models:
       - name: unemployment_rate_pct
         description: "{{ doc('unemployment_rate_pct') }}"
         data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 0, max_value: 30}}}]
+      - name: payroll_jobs_thousands
+        description: "{{ doc('payroll_jobs_thousands') }}"
+        data_tests: [{dbt_expectations.expect_column_values_to_be_between: {arguments: {min_value: 100, max_value: 20000}}}]
       - {name: net_migration_people, description: "{{ doc('net_migration_people') }}"}
       - name: net_migration_rate
         description: "{{ doc('net_migration_rate') }}"
@@ -475,7 +487,7 @@ models:
     description: >
       One row per study ZIP with residential addresses and month, with its metro in cbsa_code: the columns of
       mart_metro_month plus zip. County data reaches ZIPs as res_ratio-weighted averages of county rates, so ZIP
-      rows have no permit_units, employment or net_migration_people.
+      rows have no permit_units, employment, payroll_jobs_thousands or net_migration_people.
     data_tests:
       - unique:
           arguments:

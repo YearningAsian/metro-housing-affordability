@@ -1,4 +1,5 @@
--- Labor market per place and month: QCEW employment and average weekly wage, and the BLS unemployment rate.
+-- Labor market per place and month: QCEW employment and average weekly wage, the BLS unemployment rate and, for
+-- metros, BLS CES monthly payrolls.
 -- QCEW lags about six months, so its latest quarter carries forward. A ZIP gets the average of its counties' weekly
 -- wages weighted by res_ratio, no employment count, and its metro's unemployment rate.
 with places as (
@@ -31,9 +32,12 @@ select
     w.avg_weekly_wage_usd,
     w.quarter as wages_quarter,
     w.month < s.month as wages_is_carried_forward,
-    e.value as unemployment_rate_pct
+    e.value as unemployment_rate_pct,
+    j.value as payroll_jobs_thousands
 from {{ ref('int_spine') }} as s
 asof left join places as w
     on s.geo_level = w.geo_level and s.geo_code = w.geo_code and s.month >= w.month
 left join {{ ref('fct_economy') }} as e
-    on s.cbsa_code = e.cbsa_code and s.month = e.month
+    on s.cbsa_code = e.cbsa_code and s.month = e.month and e.metro_measure = 'unemployment_rate'
+left join {{ ref('fct_economy') }} as j
+    on s.geo_level = 'metro' and s.cbsa_code = j.cbsa_code and s.month = j.month and j.metro_measure = 'payroll_jobs'

@@ -57,7 +57,7 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 | Model | Key | Contents |
 | --- | --- | --- |
 | `dim_date` | `month` | Every month from 2012-01 through the current month: `year`, `quarter`, `month_of_year`, `quarter_start`. |
-| `dim_metro` | `cbsa_code` | The 11 study metros and each source's code for them: Zillow region, Redfin regions, QCEW area, FRED unemployment series, HUD FMR areas. |
+| `dim_metro` | `cbsa_code` | The 11 study metros and each source's code for them: Zillow region, Redfin regions, QCEW area, FRED unemployment and payroll series, HUD FMR areas. |
 | `dim_county` | `county_fips` | Every US county with its CBSA, metro division and `is_study_metro` (Phase 3). |
 | `dim_zip` | `zip` | Study-metro ZIPs with primary county, CBSA and ZCTA (Phase 3). |
 
@@ -75,7 +75,7 @@ Both marts run from 2015-01 (the first month every source covers) through the la
 | `fct_wages` | (`geo_level`, `geo_code`, `month`); county (QCEW `agglvl_code` 70) and metro (40) | `employment` (monthly), `avg_weekly_wage_usd`, `total_wages_usd`, `establishments` (quarterly), `quarter` | QCEW, all industries, all ownerships |
 | `fct_migration` | (`county_fips`, `tax_year`) | `inflow_returns`, `inflow_people`, `inflow_agi_usd`, `outflow_returns`, `outflow_people`, `outflow_agi_usd`, `net_people` | IRS SOI |
 | `fct_income` | (`geo_level`, `geo_code`, `acs_vintage`); zip (through its ZCTA), county and metro | `median_household_income_usd`, `population`, `median_gross_rent_usd`, `rent_pct_income` | ACS 5-year |
-| `fct_economy` | (`series_id`, `month`); `cbsa_code` null for national series | `value` | FRED: mortgage rate, CPI, metro unemployment rate |
+| `fct_economy` | (`series_id`, `month`); `cbsa_code` null for national series | `value` | FRED: mortgage rate, CPI, metro unemployment rate, metro payrolls (BLS CES); `metro_measure` tells the metro series apart |
 
 Before 2022 the BPS monthly county files cover only a sample of about 740 counties, and 19 of the 96 study counties (Tarrant and Denton among them) are missing from them for 2015-2021. For such a county-year, `fct_permits` spreads the annual total evenly over the 12 months and sets `is_estimated`. BPS annual files are not a fact of their own; `assert_permits_match_annual` warns when a metro's yearly `fct_permits` sum is more than 15% off them (see [data quality](data_quality.md)).
 
@@ -88,7 +88,7 @@ Before 2022 the BPS monthly county files cover only a sample of about 740 counti
 - `zhvi_yoy_growth`, `zori_yoy_growth`, `avg_weekly_wage_yoy_growth`, `employment_yoy_growth`: change from 12 months earlier, as a fraction
 - `permits_per_1000` = trailing 12-month permitted units / population × 1,000 (from `int_supply`)
 - `net_migration_rate` = net migrants / population × 1,000 (from `int_migration`)
-- national mortgage rate and CPI on every row; metro unemployment rate
+- national mortgage rate and CPI on every row; metro unemployment rate; monthly payrolls (`payroll_jobs_thousands`, metro rows only)
 
 `mart_zip_month` is incremental (delete+insert on `zip`, `month`): a plain `dbt build` rewrites the last 24 months and keeps the rest. It still computes every month first, so the year-over-year columns see the 12 months before the window, and the result matches a full build. The monthly pipeline passes `--full-refresh` anyway, because Zillow and Redfin restate older months in each release. The mart is small (about 277,000 rows, under a second as a table), so the incremental path saves no time today; it is there for when the ZIP set grows.
 
@@ -125,7 +125,7 @@ Known limits: Zillow and Redfin restate history, and only their latest release i
 | Marts (gold) | `mart_metro_month`, `mart_zip_month`, `mart_migration_origins` (Phase 9: IRS inflows by origin county with both places' ZHVI); `mart_zip_forecast` (Phase 15: a view over `ml.predictions` with the actual outcome once known) |
 | ML | `ml.features_zip_month` (dbt, Phase 11), `ml.features_metro_month` (dbt: one row per metro and month from August 2017, 1,210 rows, for the turning-point backtest), `ml.predictions` (written by `ml/train.py` in the monthly run, Phase 15: one row per ZIP and scored month with the growth forecast and hot-ZIP flag; created empty by dbt's on-run-start hook), `ml.zip_clusters` (written by `ml/clusters.py`, Phase 13: one row per ZIP and window end, September 2026 and December 2019) |
 
-The HUD ZIP-to-CBSA crosswalk and the CBSA shapes have no staging model: a dbt test reads the crosswalk from bronze as a cross-check of `dim_zip`, and the shapes stay in bronze for maps. `int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate goes through `int_wages`.
+The HUD ZIP-to-CBSA crosswalk and the CBSA shapes have no staging model: a dbt test reads the crosswalk from bronze as a cross-check of `dim_zip`, and the shapes stay in bronze for maps. `int_income` is not in the Phase 6 list; price-to-income needs ACS income at both grains, so it gets its own topic. National FRED series join the marts straight from `fct_economy`; the metro unemployment rate and payrolls go through `int_wages`.
 
 ### Star schema diagram
 

@@ -125,6 +125,9 @@ Both lose on every measure, in 2024 and in 2025 alike, so the dollar levels stay
 values suggest: 40% of the September 2026 flags sit in their metro's priciest fifth of ZIPs, close to the 38% of
 actual top-fifth growth ZIPs that did in the test months.
 
+Monthly metro payrolls (BLS CES) were tested as features too and left out; see the
+[forecast report](forecast_report.md#why-lightgbm-does-not-win-the-test-period).
+
 ## ZIPs flagged for the 12 months from September 2026
 
 290 of 1,436 ZIPs are flagged (each metro's top 20%). The five highest scores per metro (the full list is in

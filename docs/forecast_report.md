@@ -93,6 +93,24 @@ The other two rows were run before a row-order fix that moved the main model's M
 worse on test. Choosing by validation would have picked the worse model; the reported model stays the one fixed before
 any test result was seen. One validation year cannot pick features across market regimes.
 
+Monthly metro payrolls (BLS CES total nonfarm, via FRED) were tested as two more features: growth over 3 and 12
+months, each as published by the prediction date (two months after the month). The check reran the 15 quarterly
+origins from 2022 with seeds 42 and 1:
+
+| Origins (30 origin-seed pairs) | Without payrolls | With payrolls |
+| --- | --- | --- |
+| 2022 | **7.34** | 8.10 |
+| 2023 | 3.05 | **3.04** |
+| 2024 | **4.23** | 4.33 |
+| 2025 | 2.92 | 2.92 |
+| All | **4.48** | 4.71 |
+
+Payrolls helped at 9 of 30 origin-seed pairs and added 0.23 points of MAE on average (standard error 0.07), most of it
+in 2022, so they are not features. The hot-ZIP classifier moved by about its seed-to-seed noise: on the test months,
+precision in each metro's top 20% went from 0.404 to 0.407 and PR-AUC from 0.344 to 0.347; on the validation months,
+precision among the top 20 a month fell from 0.458 to 0.450. The payrolls stay in the warehouse
+(`payroll_jobs_thousands` in `mart_metro_month`) as a monthly view of jobs between QCEW's quarterly counts.
+
 ### Metro level
 
 AutoETS against naive on each metro's own series, origins from 2024 (MAE in percentage points):

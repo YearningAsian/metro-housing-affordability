@@ -36,6 +36,7 @@ Column descriptions shared by the int_ models and the marts, referenced from the
 {% docs wages_quarter %}QCEW quarter the wage values come from, e.g. 2026Q1.{% enddocs %}
 {% docs wages_is_carried_forward %}True when the month is after the latest QCEW month (QCEW lags about six months).{% enddocs %}
 {% docs unemployment_rate_pct %}BLS LAUS metro unemployment rate, not seasonally adjusted, in percent. ZIPs get their metro's rate.{% enddocs %}
+{% docs payroll_jobs_thousands %}BLS CES total nonfarm payrolls, seasonally adjusted, in thousands of jobs. Monthly, unlike QCEW's quarterly employment, and revised by BLS each year. Metros only, null for ZIPs.{% enddocs %}
 
 {% docs net_migration_people %}IRS net migration: people moving in minus people moving out over the tax year, summed over the metro's counties. Null for ZIPs.{% enddocs %}
 {% docs net_migration_rate %}Net migration per 1,000 residents (ACS population). ZIPs: res_ratio-weighted average of their counties' rates.{% enddocs %}

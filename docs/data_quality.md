@@ -9,7 +9,7 @@ Generic tests live next to the model descriptions in `dbt/models/*/_*.yml`; sing
 | Model | Test | Reason |
 | --- | --- | --- |
 | `stg_config__metros`, `dim_metro` | `unique`, `not_null` on `cbsa_code` | One row per study metro; every join to a metro goes through this key. |
-| `dim_metro` | `unique`, `not_null` on `zillow_region_id` and `fred_unemployment_series`; `not_null` on `cbsa_title` | Each metro maps to exactly one Zillow region and one FRED series, or its prices or unemployment would double or vanish. |
+| `dim_metro` | `unique`, `not_null` on `zillow_region_id`, `fred_unemployment_series` and `fred_jobs_series`; `not_null` on `cbsa_title` | Each metro maps to exactly one Zillow region and one FRED series per measure, or its prices, unemployment or payrolls would double or vanish. |
 | `stg_census_geo__cbsa_delineation`, `dim_county` | `unique`, `not_null` on `county_fips` | A county belongs to one metro. |
 | `stg_hud_crosswalk__zip_county` | `unique` on (`zip`, `county_fips`); `not_null` on both | The crosswalk is many-to-many, but each pair appears once. |
 | `dim_zip` | `unique`, `not_null` on `zip`; `not_null` on `cbsa_code`, `county_fips` | Each ZIP has one main county and one metro. |
@@ -44,6 +44,7 @@ Bounds are wide on purpose: they catch unit mistakes, sign errors and broken joi
 | `sold_above_list_pct`, `off_market_in_two_weeks_pct` | 0 to 100 | Shares of homes. |
 | `zhvi_yoy_growth`, `zori_yoy_growth`, `avg_weekly_wage_yoy_growth`, `employment_yoy_growth` | −0.5 to 1 | A metro or ZIP losing half or doubling in a year points to a broken series, not a market. Stored as fractions. |
 | `unemployment_rate_pct` | 0 to 30 | A rate, in percent. The highest observed is 21.7%. |
+| `payroll_jobs_thousands` | 100 to 20,000 | Thousands of jobs in a study metro. The latest run from 786 (Raleigh) to 4,355 (Dallas-Fort Worth). |
 | `permits_per_1000` | 0 to 100 | Trailing 12-month units per 1,000 residents. Observed: up to 22.8 for metros, 35.6 for ZIPs. |
 | `net_migration_rate` | −100 to 100 | Net migrants per 1,000 residents; a tenth of the population moving in a year is already extreme. Observed: −18 to 15 for metros, −50 to 75 for ZIPs. |
 | `price_to_income` | 0.5 to 50 | ZHVI over median household income. Observed: 3.0 to 7.1 for metros, 0.8 to 23.2 for ZIPs. |

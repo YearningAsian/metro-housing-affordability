@@ -98,7 +98,7 @@ All free and public; no scraping.
 | [Census Building Permits Survey](https://www.census.gov/construction/bps/index.html) | Housing supply |
 | [Census ACS 1-year and 5-year](https://www.census.gov/programs-surveys/acs/data.html) | Income, population, rent burden (1-year for metros, 5-year for counties and ZIPs) |
 | [BLS QCEW](https://www.bls.gov/cew/) | Jobs and wages |
-| [FRED](https://fred.stlouisfed.org/) | Mortgage rates, CPI, unemployment |
+| [FRED](https://fred.stlouisfed.org/) | Mortgage rates, CPI, unemployment, monthly payrolls (BLS CES) |
 | [IRS SOI migration](https://www.irs.gov/statistics/soi-tax-stats-migration-data) | County-to-county migration |
 | [HUD Fair Market Rents](https://www.huduser.gov/portal/datasets/fmr.html) | Rent cross-check |
 | [HUD-USPS ZIP crosswalk](https://www.huduser.gov/portal/datasets/usps_crosswalk.html) | ZIP to county and CBSA |

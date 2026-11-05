@@ -5,7 +5,7 @@ import pandas as pd
 
 from ingest.base import BaseExtractor, File, load_env, metros
 
-# 30-year mortgage rate (weekly) and CPI-U (monthly, SA); metro unemployment IDs live in config/metros.yml
+# 30-year mortgage rate (weekly) and CPI-U (monthly, SA); metro unemployment and payroll IDs live in config/metros.yml
 NATIONAL = ["MORTGAGE30US", "CPIAUCSL"]
 
 
@@ -14,7 +14,11 @@ class FRED(BaseExtractor):
 
     def files(self):
         key = load_env("FRED_API_KEY")
-        series = NATIONAL + [m["fred_unemployment_series"] for m in metros()]
+        series = NATIONAL + [
+            m[k]
+            for m in metros()
+            for k in ("fred_unemployment_series", "fred_jobs_series")
+        ]
         return [
             File(
                 "observations",

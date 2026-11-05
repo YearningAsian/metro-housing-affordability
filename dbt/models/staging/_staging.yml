@@ -18,6 +18,8 @@ models:
         description: Redfin metro region ids, as text (CBSA, or metro division codes).
       - name: fred_unemployment_series
         description: FRED series id of the metro's unemployment rate.
+      - name: fred_jobs_series
+        description: FRED series id of the metro's total nonfarm payrolls (BLS CES).
       - name: hud_fmr_areas
         description: HUD FMR area codes in the metro; the first is the core area.
 
