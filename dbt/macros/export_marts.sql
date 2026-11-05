@@ -20,6 +20,15 @@
     ) %}
     {% do log("exported metro_income_brackets", info=true) %}
 
+    {# the neighborhood types from ml/clusters.py, which is rerun by hand, not monthly; skipped if it never ran #}
+    {% if adapter.get_relation(database=target.database, schema='ml', identifier='zip_clusters') %}
+        {% do run_query(
+            "copy (select zip, cbsa_code, window_end, cluster, cluster_name from ml.zip_clusters)
+            to '" ~ path ~ "/zip_clusters.parquet' (format parquet)"
+        ) %}
+        {% do log("exported zip_clusters", info=true) %}
+    {% endif %}
+
     {# study ZIP outlines keyed by zip (one zcta per zip in dim_zip); 0.001 degrees (~100 m) keeps it near 3 MB #}
     {% do run_query(
         "copy (select z.zip, st_simplifypreservetopology(st_geomfromwkb(s.geom), 0.001) as geom

@@ -28,3 +28,15 @@ def test_page_runs_on_sample(page, monkeypatch, tmp_path):
     common.load.clear()
     at = AppTest.from_file(str(APP / "views" / f"{page}.py"), default_timeout=60).run()
     assert not at.exception, at.exception
+
+
+def test_metro_page_shows_neighborhood_types(monkeypatch, tmp_path):
+    monkeypatch.setattr(common, "LOCAL", tmp_path)
+    monkeypatch.setattr(common, "REMOTE", str(APP.parent / "sample"))
+    common.load.clear()
+    at = AppTest.from_file(str(APP / "views" / "metro.py"), default_timeout=60)
+    at.session_state["zip_view"] = "Neighborhood type"
+    at.run()
+    assert not at.exception, at.exception
+    table = at.dataframe[0].value
+    assert len(table) == 6 and table["ZIPs"].sum() > 0

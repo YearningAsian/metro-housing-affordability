@@ -19,6 +19,25 @@ from common import (
 )
 
 MIN_SALES = 24  # Redfin sales in 12 months: about 2 a month
+# ml/clusters.py's palette and the one-line profiles from docs/clusters_report.md, by cluster number
+TYPE_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"]
+PROFILES = [
+    "Highest price to income and the only clear price growth; little building",
+    "Affordable, strong in-migration, prices still up, slow sales",
+    "High prices that stopped rising; homes sell in under a month; people leave",
+    "Near the median on everything; prices slightly down, rents flat",
+    "Cheap to buy, with the fastest rent growth of any type",
+    "The most building and in-migration; prices slipping",
+]
+
+
+@st.cache_data(ttl="1d")
+def zip_types():
+    """ml/clusters.py's neighborhood types, or None when the export has none."""
+    try:
+        return load("zip_clusters.parquet")
+    except OSError:  # a missing local file or a 404 from Pages
+        return None
 
 
 @st.cache_data(ttl="1d")
@@ -49,50 +68,139 @@ code, name = pick_metro()
 m = metro_month()
 mm = m[m.cbsa_code == code].set_index("month")
 
-st.subheader(f"Home value growth by ZIP code, 2015 to {latest:%B %Y}")
-g = zip_growth()
-g = g[g.cbsa_code == code]
-thin = g.sales < MIN_SALES
-st.caption(
-    f"Typical home value in the 12 months to {latest:%B %Y} against the 2015 average. "
-    f"Median ZIP: {g[~thin].growth.median():+.0%}. ZIPs without a 2015 value are left "
-    f"blank. {thin.sum()} ZIPs with fewer than {MIN_SALES} Redfin sales in those 12 "
-    "months are gray: Zillow's value there rests on few sales and can swing on noise."
-)
+types = zip_types()
+view = "Home value growth"
+if types is not None:
+    view = (
+        st.segmented_control(
+            "Color ZIPs by",
+            [view, "Neighborhood type"],
+            default=view,
+            key="zip_view",
+        )
+        or view
+    )  # clicking the selected option again clears it
 centre = load("centroids.parquet").query("kind == 'metro' and code == @code").iloc[0]
 shapes = load("zip_shapes.geojson")
-fig = px.choropleth_map(
-    g[~thin],
-    geojson=shapes,
-    locations="zip",
-    featureidkey="properties.zip",
-    color="growth",
-    color_continuous_scale=BLUES,
-    custom_data=["latest"],
-    center={"lat": centre.lat, "lon": centre.lon},
-    zoom=7.6,
-    map_style="carto-positron",
-    opacity=0.85,
-)
-fig.update_traces(
-    marker_line_width=0.3,
-    marker_line_color="white",
-    hovertemplate="ZIP %{location}: %{z:+.0%} since 2015, "
-    "typical home $%{customdata[0]:,.0f}<extra></extra>",
-)
-fig.update_coloraxes(colorbar={"title": "", "tickformat": "+.0%", "thickness": 12})
-fig.add_choroplethmap(
-    geojson=shapes,
-    locations=g[thin].zip,
-    featureidkey="properties.zip",
-    z=g[thin].sales,
-    colorscale=[MUTED, MUTED],
-    showscale=False,
-    marker={"opacity": 0.85, "line": {"width": 0.3, "color": "white"}},
-    hovertemplate="ZIP %{location}: %{z:.0f} sales in 12 months, too few to "
-    "rate<extra></extra>",
-)
-chart(style(fig, height=520))
+if view == "Neighborhood type":
+    now_end = types.window_end.max()
+    t = types[(types.cbsa_code == code) & (types.window_end == now_end)]
+    st.subheader(f"Neighborhood types, 12 months to {now_end:%B %Y}")
+    st.caption(
+        "Each ZIP's nearest of six types, grouped by k-means on its last 12 months of home value and rent "
+        "growth, price to income, permits, days on market and net migration. The types sit on a continuum, "
+        "not in sharp groups, and are refit by hand, not monthly. Method: docs/clusters_report.md."
+    )
+    order = (
+        types.drop_duplicates("cluster").sort_values("cluster").cluster_name.tolist()
+    )
+    fig = px.choropleth_map(
+        t,
+        geojson=shapes,
+        locations="zip",
+        featureidkey="properties.zip",
+        color="cluster_name",
+        category_orders={"cluster_name": order},
+        color_discrete_map=dict(zip(order, TYPE_COLORS, strict=True)),
+        center={"lat": centre.lat, "lon": centre.lon},
+        zoom=7.6,
+        map_style="carto-positron",
+        opacity=0.85,
+    )
+    fig.update_traces(
+        marker_line_width=0.3,
+        marker_line_color="white",
+        hovertemplate="ZIP %{location}: %{fullData.name}<extra></extra>",
+    )
+    chart(
+        style(
+            fig,
+            height=560,
+            showlegend=True,
+            legend={
+                "orientation": "h",
+                "y": 1.0,
+                "yanchor": "bottom",
+                "x": 0,
+                "title": "",
+            },
+        )
+    )
+    then = types[(types.cbsa_code == code) & (types.window_end < now_end)]
+    every = types[types.window_end == now_end]
+    st.dataframe(
+        pd.DataFrame(
+            {
+                "Type": order,
+                "ZIPs": t.cluster.value_counts().reindex(range(6), fill_value=0).values,
+                "Share here": t.cluster.value_counts(normalize=True)
+                .reindex(range(6), fill_value=0)
+                .values,
+                "All metros": every.cluster.value_counts(normalize=True)
+                .reindex(range(6), fill_value=0)
+                .values,
+                f"ZIPs in {then.window_end.max():%b %Y}": then.cluster.value_counts()
+                .reindex(range(6), fill_value=0)
+                .values,
+                "Profile": PROFILES,
+            }
+        ),
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "Share here": st.column_config.NumberColumn(format="percent"),
+            "All metros": st.column_config.NumberColumn(format="percent"),
+        },
+    )
+    stayed = t.merge(then, on="zip", suffixes=("", "_then"))
+    st.caption(
+        f"{(stayed.cluster == stayed.cluster_then).mean():.0%} of {name}'s typed ZIPs are the same type as in "
+        f"{then.window_end.max():%B %Y}, scored with today's type definitions."
+    )
+
+else:
+    st.subheader(f"Home value growth by ZIP code, 2015 to {latest:%B %Y}")
+    g = zip_growth()
+    g = g[g.cbsa_code == code]
+    thin = g.sales < MIN_SALES
+    st.caption(
+        f"Typical home value in the 12 months to {latest:%B %Y} against the 2015 average. "
+        f"Median ZIP: {g[~thin].growth.median():+.0%}. ZIPs without a 2015 value are left "
+        f"blank. {thin.sum()} ZIPs with fewer than {MIN_SALES} Redfin sales in those 12 "
+        "months are gray: Zillow's value there rests on few sales and can swing on noise."
+    )
+    fig = px.choropleth_map(
+        g[~thin],
+        geojson=shapes,
+        locations="zip",
+        featureidkey="properties.zip",
+        color="growth",
+        color_continuous_scale=BLUES,
+        custom_data=["latest"],
+        center={"lat": centre.lat, "lon": centre.lon},
+        zoom=7.6,
+        map_style="carto-positron",
+        opacity=0.85,
+    )
+    fig.update_traces(
+        marker_line_width=0.3,
+        marker_line_color="white",
+        hovertemplate="ZIP %{location}: %{z:+.0%} since 2015, "
+        "typical home $%{customdata[0]:,.0f}<extra></extra>",
+    )
+    fig.update_coloraxes(colorbar={"title": "", "tickformat": "+.0%", "thickness": 12})
+    fig.add_choroplethmap(
+        geojson=shapes,
+        locations=g[thin].zip,
+        featureidkey="properties.zip",
+        z=g[thin].sales,
+        colorscale=[MUTED, MUTED],
+        showscale=False,
+        marker={"opacity": 0.85, "line": {"width": 0.3, "color": "white"}},
+        hovertemplate="ZIP %{location}: %{z:.0f} sales in 12 months, too few to "
+        "rate<extra></extra>",
+    )
+    chart(style(fig, height=520))
 
 left, right = st.columns(2, gap="large")
 with left:
