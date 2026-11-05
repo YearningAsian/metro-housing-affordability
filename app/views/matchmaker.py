@@ -90,7 +90,7 @@ else:
 z["fits"] = z.cost <= budget
 names = metro_names()
 
-st.subheader(f"{z.fits.sum():,} of {len(z):,} ZIPs fit ${budget:,.0f} a month")
+st.header(f"{z.fits.sum():,} of {len(z):,} ZIPs fit ${budget:,.0f} a month")
 by_metro = (
     z.groupby("cbsa_code")
     .agg(fit=("fits", "sum"), n=("fits", "size"))
@@ -146,7 +146,7 @@ chart(
 
 code, name = pick_metro()
 fits = z[(z.cbsa_code == code) & z.fits].sort_values("cost", ascending=False)
-st.subheader(f"ZIPs that fit in {name}")
+st.header(f"ZIPs that fit in {name}")
 if fits.empty:
     m = z[z.cbsa_code == code]
     st.info(

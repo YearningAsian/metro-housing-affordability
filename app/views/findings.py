@@ -39,7 +39,7 @@ permits = dec[dec.year.between(2016, end)].groupby("cbsa_code").permits_per_1000
 d = pd.DataFrame({"permits": permits, "growth": zhvi[end] / zhvi[2015] - 1}).dropna()
 d["name"] = d.index.map(names)
 
-st.subheader("Did metros that built more see slower price growth?")
+st.header("Did metros that built more see slower price growth?")
 st.caption(
     f"Building permits per 1,000 residents, yearly average 2016 to {end}, against "
     f"growth in the typical home value from December 2015 to December {end}."
@@ -107,7 +107,7 @@ gap = (
     .sort_values()
 )
 
-st.subheader("Did rents grow faster than wages?")
+st.header("Did rents grow faster than wages?")
 st.caption(
     f"Growth in the typical rent (Zillow ZORI) minus growth in the average weekly "
     f"wage (BLS QCEW), {first_q} to {last_q}, in percentage points. Red: rents "
@@ -141,7 +141,7 @@ chart(
 # ---- Q7: who can afford the typical home?
 a = affordable_share()
 labels = a.index.map(names)
-st.subheader("Who can afford the typical home?")
+st.header("Who can afford the typical home?")
 st.caption(
     "Share of households whose income covers the monthly payment at 30%: principal, "
     "interest and property tax, with 10% down. 2015 against the latest 12 months, whose "
@@ -214,7 +214,7 @@ windows = {
 }
 PARTS = {"Home prices": BLUE, "Rates and tax": ORANGE, "Income": AQUA}
 
-st.subheader("What drove the rise in the mortgage share?")
+st.header("What drove the rise in the mortgage share?")
 st.caption(
     "The change in the mortgage share (the monthly payment on the typical home over "
     "income), split into home prices, the cost per dollar borrowed (mortgage rate and "
@@ -301,7 +301,7 @@ def listed(codes):
     return ", ".join(n[:-1]) + " and " + n[-1] if len(n) > 1 else n[0]
 
 
-st.subheader("Did fast price growth land on lower-income ZIPs?")
+st.header("Did fast price growth land on lower-income ZIPs?")
 st.caption(
     "Of each metro's top fifth of ZIPs for growth in the typical home value, 2015 to the "
     "latest 12 months: the share whose 2015 median household income (ACS 5-year) was "
@@ -382,7 +382,7 @@ try:
 except OSError:  # the published exports predate dim_zip
     risk = None
 
-st.subheader("Does climate risk explain the Tampa and Orlando declines?")
+st.header("Does climate risk explain the Tampa and Orlando declines?")
 if risk is None:
     st.info("This chart appears here after the next monthly pipeline run.")
 elif not names.isin(["Tampa", "Orlando"]).any():

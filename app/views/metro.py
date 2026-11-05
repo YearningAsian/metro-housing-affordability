@@ -85,7 +85,7 @@ shapes = load("zip_shapes.geojson")
 if view == "Neighborhood type":
     now_end = types.window_end.max()
     t = types[(types.cbsa_code == code) & (types.window_end == now_end)]
-    st.subheader(f"Neighborhood types, 12 months to {now_end:%B %Y}")
+    st.header(f"Neighborhood types, 12 months to {now_end:%B %Y}")
     st.caption(
         "Each ZIP's nearest of six types, grouped by k-means on its last 12 months of home value and rent "
         "growth, price to income, permits, days on market and net migration. The types sit on a continuum, "
@@ -133,10 +133,12 @@ if view == "Neighborhood type":
             {
                 "Type": order,
                 "ZIPs": t.cluster.value_counts().reindex(range(6), fill_value=0).values,
-                "Share here": t.cluster.value_counts(normalize=True)
+                "Share here": 100
+                * t.cluster.value_counts(normalize=True)
                 .reindex(range(6), fill_value=0)
                 .values,
-                "All metros": every.cluster.value_counts(normalize=True)
+                "All metros": 100
+                * every.cluster.value_counts(normalize=True)
                 .reindex(range(6), fill_value=0)
                 .values,
                 f"ZIPs in {then.window_end.max():%b %Y}": then.cluster.value_counts()
@@ -148,8 +150,8 @@ if view == "Neighborhood type":
         hide_index=True,
         width="stretch",
         column_config={
-            "Share here": st.column_config.NumberColumn(format="percent"),
-            "All metros": st.column_config.NumberColumn(format="percent"),
+            "Share here": st.column_config.NumberColumn(format="%.0f%%"),
+            "All metros": st.column_config.NumberColumn(format="%.0f%%"),
         },
     )
     stayed = t.merge(then, on="zip", suffixes=("", "_then"))
@@ -159,7 +161,7 @@ if view == "Neighborhood type":
     )
 
 else:
-    st.subheader(f"Home value growth by ZIP code, 2015 to {latest:%B %Y}")
+    st.header(f"Home value growth by ZIP code, 2015 to {latest:%B %Y}")
     g = zip_growth()
     g = g[g.cbsa_code == code]
     thin = g.sales < MIN_SALES
@@ -204,7 +206,7 @@ else:
 
 left, right = st.columns(2, gap="large")
 with left:
-    st.subheader("Home values against wages")
+    st.header("Home values against wages")
     st.caption(
         "Both indexed to their 2015 average = 100. Wages are the QCEW average weekly "
         "wage, all industries, which peaks each fourth quarter with bonuses; a "
@@ -245,7 +247,7 @@ with left:
         )
     )
 with right:
-    st.subheader("Building permits per 1,000 residents")
+    st.header("Building permits per 1,000 residents")
     st.caption(
         "New housing units authorized in the past 12 months. "
         f"{name} in blue, the other metros in gray."

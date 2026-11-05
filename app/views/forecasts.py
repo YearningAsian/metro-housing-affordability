@@ -55,7 +55,7 @@ done = f[f.actual_growth_12m.notna()]  # forecasts whose 12 months have passed
 first = f.month.min()
 f = f[(f.cbsa_code == code) & (f.month == f.month.max())]
 month = f.month.max()
-st.subheader(
+st.header(
     f"Forecast home value growth, {month:%B %Y} to {month.replace(year=month.year + 1):%B %Y}"
 )
 st.caption(
@@ -99,7 +99,7 @@ fig.update_traces(
 fig.update_coloraxes(colorbar={"title": "", "tickformat": "+.0%", "thickness": 12})
 chart(style(fig, height=520))
 
-st.subheader(f"{name} ZIPs by hot-ZIP score")
+st.header(f"{name} ZIPs by hot-ZIP score")
 t = f.sort_values("hot_score", ascending=False)[
     [
         "zip",
@@ -207,7 +207,7 @@ if why is not None and not why.empty:
     )
     st.caption(f"The other {why.feature.nunique() - len(s)} inputs add {rest:+.2f}.")
 
-st.subheader("Track record")
+st.header("Track record")
 if done.empty:
     st.caption(
         "No live forecast has reached its 12 months yet; the first, made for "

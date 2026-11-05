@@ -16,7 +16,7 @@ move_year = o.move_year.iloc[0]
 priced = o.dropna(subset=["origin_to_metro_zhvi"])
 ratio = (priced.origin_to_metro_zhvi * priced.people).sum() / priced.people.sum()
 st.markdown(
-    f"### {o.people.sum():,.0f} people moved to {name} from other counties in "
+    f"## {o.people.sum():,.0f} people moved to {name} from other counties in "
     f"{move_year}. Homes where they came from cost {abs(ratio - 1):.0%} "
     f"{'more' if ratio > 1 else 'less'} than in {name}."
 )
@@ -40,7 +40,7 @@ near = top.loc[dist.sort_values().index]
 near = near[near.people.cumsum().shift(fill_value=0) < 0.8 * near.people.sum()]
 lat, lon = [*near.lat, end.lat], [*near.lon, end.lon]
 
-st.subheader(f"Top {TOP} origin counties, moves in {move_year}")
+st.header(f"Top {TOP} origin counties, moves in {move_year}")
 fig = go.Figure()
 width = 1 + 7 * top.people / top.people.max()
 for r, w in zip(top.itertuples(), width):
@@ -90,7 +90,7 @@ st.caption(
     "lines to farther ones may run off the edge."
 )
 
-st.subheader("Were they moving somewhere cheaper?")
+st.header("Were they moving somewhere cheaper?")
 st.caption(
     f"Typical home value in each origin county ÷ {name}'s. Right of the line: homes "
     f"cost more where they came from. Dot size: people."

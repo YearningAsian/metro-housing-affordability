@@ -22,7 +22,7 @@ latest = latest_month()
 
 st.title("Which metro got least affordable?")
 st.markdown(
-    f"### {names[worst]}: a typical home costs {p2i.latest[worst]:.1f}× the median "
+    f"## {names[worst]}: a typical home costs {p2i.latest[worst]:.1f}× the median "
     f"household income, up from {p2i.start[worst]:.1f}× in 2015."
 )
 st.caption(
@@ -89,7 +89,7 @@ else:
 
 left, right = st.columns([2, 3], gap="large")
 with left:
-    st.subheader(f"Rise in {unit}")
+    st.header(f"Rise in {unit}")
     s = d.change.sort_values()
     fig = go.Bar(
         x=s.values,
@@ -113,7 +113,7 @@ with left:
         )
     )
 with right:
-    st.subheader(f"{measure}, monthly")
+    st.header(f"{measure}, monthly")
     fig = go.Figure()
     # selected metro drawn last, on top
     for c in sorted(names.index, key=lambda c: c == code):

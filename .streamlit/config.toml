@@ -1,10 +1,16 @@
 # Dashboard theme: the palette in app/common.py
 [theme]
 base = "light"
-primaryColor = "#2a78d6"
+# darker than the chart BLUE so accent text passes 4.5:1, also on its own 10% tint
+primaryColor = "#2266b8"
 backgroundColor = "#fcfcfb"
 secondaryBackgroundColor = "#f0efec"
 textColor = "#0b0b0b"
+# st.metric delta text, darkened from Streamlit's defaults to pass 4.5:1 on their tints
+redTextColor = "#b03a3d"
+greenTextColor = "#13782f"
+# h1 title, h2 section (Streamlit's default h3 size), h3 sub-section
+headingFontSizes = ["2.75rem", "1.75rem", "1.25rem"]
 
 [client]
 toolbarMode = "viewer"
