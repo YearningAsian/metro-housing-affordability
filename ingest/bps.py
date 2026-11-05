@@ -1,6 +1,6 @@
 from datetime import date
 
-from ingest.base import BaseExtractor, File, lit, months
+from ingest.base import BaseExtractor, File, NotPublished, lit, months
 
 BASE = "https://www2.census.gov/econ/bps/County"
 # County files only: they aggregate to 2023 CBSAs through dim_county and report value in dollars
@@ -35,6 +35,10 @@ class BPS(BaseExtractor):
         return [File(e, f"{BASE}/{n}", n, optional=True) for e, n in monthly + annual]
 
     def read(self, con, path, file):
+        # Census's firewall sometimes answers with HTTP 200 and an HTML "Request Rejected" page (co2611c.txt on
+        # 5 Nov 2026, while its neighbors gave 404). It is never data: log the file missing and ask again next month.
+        if path.read_bytes()[:5].lower() == b"<html":
+            raise NotPublished("Census rejected the request")
         # two header rows and a blank line; county names are padded with spaces
         return con.sql(
             f"select * replace (trim(county_name) as county_name) from read_csv({lit(path.as_posix())}, skip = 3, "
