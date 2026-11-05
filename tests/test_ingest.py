@@ -141,7 +141,7 @@ def test_unreleased_period_is_retried_next_month(tmp_path, served):
     assert [r[0] for r in log_rows(tmp_path)] == ["missing", "missing"]
 
 
-def test_census_rejection_page_is_not_data(tmp_path, served):
+def test_census_rejection_page_is_not_data(tmp_path, served, caplog):
     # Census answered co2611c.txt with this page and HTTP 200 on 5 Nov 2026, which failed the run
     ex, f = one_file("bps", "co2608c.txt")
     page = tmp_path / "rejected.txt"
@@ -153,6 +153,7 @@ def test_census_rejection_page_is_not_data(tmp_path, served):
     assert base.run([ex], data=tmp_path / "data", today=TODAY) == 0
     assert [r[0] for r in log_rows(tmp_path / "data")] == ["missing"]
     assert not (tmp_path / "data" / "bronze" / "bps").exists()
+    assert "co2608c.txt: Census rejected the request" in caplog.text
 
 
 def test_failures_are_counted_and_redacted(tmp_path, served, caplog):

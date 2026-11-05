@@ -1,6 +1,6 @@
 from datetime import date
 
-from ingest.base import BaseExtractor, File, NotPublished, lit, months
+from ingest.base import BaseExtractor, File, NotPublished, lit, log, months
 
 BASE = "https://www2.census.gov/econ/bps/County"
 # County files only: they aggregate to 2023 CBSAs through dim_county and report value in dollars
@@ -28,7 +28,8 @@ class BPS(BaseExtractor):
             for y, m in months((2015, 1), (today.year, today.month))
             if (y, m) != (2015, 4)
         ]
-        # Census's firewall always rejects co1504c.txt; staging derives April 2015 as co1504y - co1503y
+        # Census's firewall rejected co1504c.txt for months (it served it again on 5 Nov 2026); staging derives
+        # April 2015 as co1504y - co1503y
         monthly += [("county_ytd", "co1503y.txt"), ("county_ytd", "co1504y.txt")]
         # annual files carry late corrections the monthly files miss; same layout
         annual = [("county_annual", f"co{y}a.txt") for y in range(2015, today.year)]
@@ -38,6 +39,11 @@ class BPS(BaseExtractor):
         # Census's firewall sometimes answers with HTTP 200 and an HTML "Request Rejected" page (co2611c.txt on
         # 5 Nov 2026, while its neighbors gave 404). It is never data: log the file missing and ask again next month.
         if path.read_bytes()[:5].lower() == b"<html":
+            # a warning, since a published file blocked this way only shows up as one more "missing"
+            log.warning(
+                "bps/%s: Census rejected the request; asking again next month",
+                path.name,
+            )
             raise NotPublished("Census rejected the request")
         # two header rows and a blank line; county names are padded with spaces
         return con.sql(
