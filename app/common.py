@@ -19,7 +19,7 @@ REMOTE = os.environ.get(
 
 # Reference palette (dataviz skill), as in notebooks/common.py: one highlight hue over gray
 SURFACE, INK, INK2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#c3c2b7", "#e8e7e3"
-BLUE, ORANGE, RED = "#2a78d6", "#eb6834", "#e34948"
+BLUE, ORANGE, RED, AQUA = "#2a78d6", "#eb6834", "#e34948", "#1baf7a"
 BLUES = ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 # lower bounds of the ACS B19001 income brackets (households_by_income)
 BRACKETS = (

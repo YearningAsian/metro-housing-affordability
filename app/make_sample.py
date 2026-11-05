@@ -18,6 +18,7 @@ OUT.mkdir(exist_ok=True)
 zips = set()
 for name in [
     "dim_metro",
+    "dim_zip",
     "mart_metro_month",
     "mart_migration_origins",
     "mart_zip_forecast",
@@ -27,7 +28,7 @@ for name in [
 ]:
     d = pd.read_parquet(SRC / f"{name}.parquet")
     d = d[d.cbsa_code.isin(METROS)]
-    if "zip" in d:
+    if "zip" in d and name != "dim_zip":  # dim_zip also lists ZIPs Zillow never prices
         zips |= set(d.zip)
     d.to_parquet(OUT / f"{name}.parquet", index=False, compression="zstd")
 

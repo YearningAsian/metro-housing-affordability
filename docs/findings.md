@@ -138,7 +138,7 @@ most of it, for a net +0.14. From 2021 to Oct 2025–Sep 2026, rates and tax wer
 
 - Number: 2021 to now, financing +0.35 against prices +0.20 (medians); 2015 to now, prices +0.73, financing +0.22,
   income −0.44.
-- Chart: [the split by metro](figures/q8_mortgage_share_split.png).
+- Chart: [the split by metro](figures/q8_mortgage_share_split.png); the dashboard's Findings page has it for each period.
 - Notebook: [`09_q8_mortgage_share_split.ipynb`](../notebooks/09_q8_mortgage_share_split.ipynb); helper
   `mortgage_share_split()` in [`notebooks/common.py`](../notebooks/common.py). The log of the Q6 share is log price +
   log financing cost per dollar (rate and property tax) − log income, so the three parts add up exactly; each period is
@@ -158,7 +158,8 @@ Raleigh. 248 of 1,403 ZIPs are lower-income ZIPs with top-fifth growth; Atlanta'
 (+62% against +60%), with large gaps only in Phoenix (+22 points) and Orlando (+14).
 
 - Number: 88% of top-fifth growth ZIPs were lower-income (60% Seattle to 100%); 248 pressure ZIPs.
-- Chart: [maps by metro](figures/q9_price_pressure_maps.png); the top 3 per metro are in the notebook.
+- Chart: [maps by metro](figures/q9_price_pressure_maps.png); the top 3 per metro are in the notebook and on the
+  dashboard's Findings page.
 - Notebook: [`09_q9_gentrification_pressure.ipynb`](../notebooks/09_q9_gentrification_pressure.ipynb).
 - Caveats: this is an association, not displacement; price growth says nothing about who moved out. Cheap homes grew
   faster everywhere in this period (Q5), so part of the pattern is a cheap-home effect, not a neighborhood one. ZIP
@@ -179,7 +180,7 @@ explanation, not one tested here.
 
 - Number: within Tampa and Orlando, r = +0.36 between the hurricane loss rate and the value change, −0.09 without
   Pinellas, −0.11 in Orlando alone; across all ZIPs within their metros, +0.05 to +0.12. None supports a risk discount.
-- Chart: [metro medians and Florida ZIPs](figures/q10_climate_risk.png).
+- Chart: [metro medians and Florida ZIPs](figures/q10_climate_risk.png), also on the dashboard's Findings page.
 - Notebook: [`09_q10_climate_risk.ipynb`](../notebooks/09_q10_climate_risk.ipynb). Risk: FEMA National Risk Index
   v1.20 (December 2025), expected annual building loss over building value, from `gold.dim_zip`.
 - Caveats: the index is by county, so inside the two Florida metros it varies only between 8 counties. It measures
