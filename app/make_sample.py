@@ -22,6 +22,7 @@ for name in [
     "mart_migration_origins",
     "mart_zip_forecast",
     "mart_zip_month",
+    "metro_income_brackets",
 ]:
     d = pd.read_parquet(SRC / f"{name}.parquet")
     d = d[d.cbsa_code.isin(METROS)]

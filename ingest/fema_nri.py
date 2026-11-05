@@ -14,7 +14,9 @@ class FEMANRI(BaseExtractor):
     source = "fema_nri"
 
     def files(self):
-        # fema.gov answers 403 to the generic browser User-Agent run() sets, so name the project instead
+        # fema.gov answered 403 to the generic User-Agent run() sets, then loaded with this one on 4 Nov 2026 and
+        # refused it again on 5 Nov. shortcut: a fixed release loads once, so the pushed state spares CI the fetch;
+        # a rebuild without that state may need a retry from another network
         self.headers = {
             "User-Agent": "metro-housing-affordability (+https://github.com/YearningAsian/metro-housing-affordability)"
         }

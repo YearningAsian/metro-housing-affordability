@@ -7,6 +7,8 @@ from common import (
     INK2,
     MUTED,
     RED,
+    SURFACE,
+    affordable_share,
     chart,
     footer,
     metro_month,
@@ -18,7 +20,7 @@ names = metro_names()
 m = metro_month()
 st.title("Findings")
 st.caption(
-    "Two of the project's questions, answered across all the metros. The full "
+    "Three of the project's questions, answered across all the metros. The full "
     "write-up is in docs/findings.md."
 )
 
@@ -128,6 +130,54 @@ chart(
         xaxis_showgrid=False,
         xaxis_showticklabels=False,
         xaxis_range=[min(0, 120 * gap.min()), max(0, 120 * gap.max())],  # labels fit
+    )
+)
+
+# ---- Q7: who can afford the typical home?
+a = affordable_share()
+labels = a.index.map(names)
+st.subheader("Who can afford the typical home?")
+st.caption(
+    "Share of households whose income covers the monthly payment at 30%: principal, "
+    "interest and property tax, with 10% down. 2015 against the latest 12 months, whose "
+    f"incomes are the {a.attrs['vintage']} ACS. Counts all households, renters included, "
+    "and ignores savings and debts."
+)
+fig = go.Figure()
+fig.add_scatter(
+    # one line per metro; None breaks the line between them
+    x=[v for s, e in zip(a.start, a.latest, strict=True) for v in (s, e, None)],
+    y=[v for n in labels for v in (n, n, None)],
+    mode="lines",
+    line={"color": MUTED, "width": 2},
+    hoverinfo="skip",
+    showlegend=False,
+)
+for col, year, color, side in [
+    ("start", "2015", MUTED, "middle right"),
+    ("latest", "Latest 12 months", BLUE, "middle left"),
+]:
+    fig.add_scatter(
+        x=a[col],
+        y=labels,
+        name=year,
+        mode="markers+text",
+        text=[f"{v:.0%}" for v in a[col]],
+        textposition=side,
+        textfont={"color": INK2, "size": 12},
+        marker={"color": color, "size": 11, "line": {"color": SURFACE, "width": 2}},
+        hovertemplate="%{y}, " + year + ": %{x:.0%}<extra></extra>",
+    )
+chart(
+    style(
+        fig,
+        height=max(200, 36 * len(a) + 70),
+        showlegend=True,
+        legend={"orientation": "h", "y": 1.02, "yanchor": "bottom", "x": 0},
+        xaxis_showticklabels=False,
+        xaxis_showgrid=False,
+        # room for the labels outside the two ends
+        xaxis_range=[a.latest.min() - 0.07, a.start.max() + 0.07],
     )
 )
 

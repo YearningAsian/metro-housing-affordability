@@ -14,6 +14,11 @@ sys.path.insert(0, str(APP))
 import common
 
 
+def test_share_above_splits_a_bracket_evenly():
+    # half of the $50k-60k households are at $55k or more
+    assert abs(common.share_above(55_000, [0] * 9 + [1] + [0] * 6) - 0.5) < 1e-9
+
+
 @pytest.mark.parametrize(
     "page", ["overview", "metro", "migration", "forecasts", "findings"]
 )

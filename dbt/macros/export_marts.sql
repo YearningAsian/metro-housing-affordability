@@ -10,6 +10,16 @@
         {% do log("exported " ~ mart, info=true) %}
     {% endfor %}
 
+    {# each study metro's ACS 1-year income brackets, for the findings page's share who can afford the typical home #}
+    {% do run_query(
+        "copy (
+            select cbsa_code, acs_vintage, households_by_income
+            from " ~ ref('fct_income') ~ "
+            where geo_level = 'metro'
+        ) to '" ~ path ~ "/metro_income_brackets.parquet' (format parquet)"
+    ) %}
+    {% do log("exported metro_income_brackets", info=true) %}
+
     {# study ZIP outlines keyed by zip (one zcta per zip in dim_zip); 0.001 degrees (~100 m) keeps it near 3 MB #}
     {% do run_query(
         "copy (select z.zip, st_simplifypreservetopology(st_geomfromwkb(s.geom), 0.001) as geom

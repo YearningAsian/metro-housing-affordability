@@ -354,6 +354,7 @@ File `NRI_Table_Counties.zip` from OpenFEMA (`https://www.fema.gov/about/reports
 
 **Quirks.**
 
+- fema.gov's CDN refuses some automated requests: it loaded with the project's User-Agent on 4 November 2026 and answered 403 to the same request on 5 November. The release is fetched once, so a run with the load log and bronze from R2 never asks again. A build with no such state fails at this source until a download gets through.
 - The first header (`OID_`) starts with a byte-order mark; the extractor reads with `utf-8-sig`.
 - A blank hazard column means FEMA found the hazard does not apply (no hurricane loss in King County, WA). 747 counties have no hurricane loss.
 - 88 counties have no composite score.

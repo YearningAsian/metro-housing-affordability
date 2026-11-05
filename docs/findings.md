@@ -115,7 +115,7 @@ than price-to-income because mortgage rates roughly doubled. Principal and inter
 from 31% in Seattle to 50% in Atlanta. In 2015 they ranged from 54% (Seattle) to 71% (Atlanta). The share fell in all
 11 metros, by a median of 19 points. Seattle now takes an income of about $184,000.
 
-- Number: 31% (Seattle) to 50% (Atlanta), down from 54% to 71%.
+- Number: 31% (Seattle) to 50% (Atlanta), down from 54% to 71%. The dashboard's Findings page shows each metro.
 - Chart: [who can afford the typical home](figures/q7_who_can_afford.png).
 - Notebook: [`09_q6_q7_mortgage_and_who_can_afford.ipynb`](../notebooks/09_q6_q7_mortgage_and_who_can_afford.ipynb);
   helper `affordable_share()` in [`notebooks/common.py`](../notebooks/common.py). The income needed is 12 times the

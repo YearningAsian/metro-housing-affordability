@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from urllib.request import urlopen
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -20,6 +21,10 @@ REMOTE = os.environ.get(
 SURFACE, INK, INK2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#c3c2b7", "#e8e7e3"
 BLUE, ORANGE, RED = "#2a78d6", "#eb6834", "#e34948"
 BLUES = ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#184f95", "#0d366b"]
+# lower bounds of the ACS B19001 income brackets (households_by_income)
+BRACKETS = (
+    np.array([0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 75, 100, 125, 150, 200]) * 1000
+)
 
 
 @st.cache_data(ttl="1d", show_spinner="Loading data")
@@ -44,11 +49,11 @@ def metro_month():
     Leaves out insurance and HOA fees."""
     m = load("mart_metro_month.parquet").copy()
     r = m.mortgage_rate_pct / 1200
-    payment = (
+    m["payment"] = (
         0.9 * m.zhvi_usd * r / (1 - (1 + r) ** -360)
         + m.zhvi_usd * m.property_tax_rate / 12
     )
-    m["mortgage_share"] = payment / (m.median_household_income_usd / 12)
+    m["mortgage_share"] = m.payment / (m.median_household_income_usd / 12)
     return m
 
 
@@ -76,6 +81,42 @@ def change(col="price_to_income", start_year=2015):
     )
     d["change"] = d.latest - d.start
     return d.sort_values("change", ascending=False)
+
+
+def affordable_share(start_year=2015, burden=0.30):
+    """Per metro: the share of households whose income covers the typical home's payment
+    at `burden`, as in notebooks/common.py. The start year uses its own ACS brackets and
+    average payment; the latest 12 months use the latest vintage's brackets."""
+    m = metro_month()
+    recent = m.month > latest_month() - pd.DateOffset(months=12)
+    h = load("metro_income_brackets.parquet")
+    h = h[h.acs_vintage <= latest_month().year]
+    h = h.set_index(["acs_vintage", "cbsa_code"]).households_by_income
+    newest = h.index.get_level_values("acs_vintage").max()
+
+    def shares(rows, vintage):
+        needed = rows.groupby("cbsa_code").payment.mean() * 12 / burden
+        return pd.Series(
+            {c: share_above(v, h[vintage, c]) for c, v in needed.items()}, dtype=float
+        )
+
+    d = pd.DataFrame(
+        {
+            "start": shares(m[m.month.dt.year == start_year], start_year),
+            "latest": shares(m[recent], newest),
+        }
+    )
+    d.attrs["vintage"] = newest
+    return d.sort_values("latest")
+
+
+def share_above(income, households):
+    """Share of households with income at or above `income`, linear within a bracket.
+    shortcut: above $200k (the open top bracket) it returns the top bracket's share, an
+    upper bound; fit a Pareto tail if a needed income ever passes $200k."""
+    households = np.asarray(households, dtype=float)
+    below = np.concatenate([[0], np.cumsum(households[:-1])]) / households.sum()
+    return 1 - np.interp(income, BRACKETS, below)
 
 
 def pick_metro():
